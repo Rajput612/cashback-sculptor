@@ -13,9 +13,10 @@ import {
   initializeEmptySpending
 } from '@/lib/calculations';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, TrendingUp } from 'lucide-react';
+import { ChevronDown, TrendingUp, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -23,11 +24,22 @@ const Index = () => {
   const [recommendedCards, setRecommendedCards] = useState<CreditCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<CreditCard[]>([]);
   const [showIntro, setShowIntro] = useState(true);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   // Featured cards for promotion (show regardless of spending)
   const featuredCards = creditCards.filter(card => 
     ["hdfc-infinia", "sbi-elite", "icici-amazon", "axis-flipkart"].includes(card.id)
   );
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleSpendingSubmit = (spendingData: Spending) => {
     setSpending(spendingData);
@@ -84,7 +96,7 @@ const Index = () => {
       
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 pb-20">
         {/* Hero Section */}
-        <section className="py-20 text-center max-w-3xl mx-auto">
+        <section className="py-16 text-center max-w-3xl mx-auto">
           <Badge className="mb-5 px-3 py-1 bg-primary/10 text-primary border-primary/20 animate-fade-in">
             Maximize Your Cash Back
           </Badge>
@@ -95,53 +107,9 @@ const Index = () => {
             Tell us how you spend your money, and we'll recommend the perfect credit card combination
             to maximize your cash back and benefits.
           </p>
-          <div className="flex justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <a 
-              href="#featured-cards" 
-              className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-            >
-              <span>Featured Cards</span>
-              <ChevronDown className="h-4 w-4" />
-            </a>
-          </div>
         </section>
         
-        {/* Featured Cards Section */}
-        <section id="featured-cards" className="py-12">
-          <div className="mb-10 text-center">
-            <Badge className="mb-2 px-3 py-1 bg-amber-500/20 text-amber-700 border-amber-200">
-              <TrendingUp className="h-3 w-3 mr-1" /> Featured
-            </Badge>
-            <h2 className="text-3xl font-bold mb-4">Top Credit Cards</h2>
-            <p className="text-muted-foreground">
-              Explore these popular credit cards with great rewards and benefits
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-8 mb-12">
-            {featuredCards.map((card) => (
-              <CardSuggestion
-                key={`featured-${card.id}`}
-                card={card}
-                isPromotion={true}
-              />
-            ))}
-          </div>
-          
-          <div className="text-center mb-8">
-            <a 
-              href="#spending-form" 
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-            >
-              <span>Find Your Perfect Card Match</span>
-              <ChevronDown className="h-4 w-4" />
-            </a>
-          </div>
-        </section>
-        
-        <Separator className="my-8" />
-        
-        {/* Spending Form Section */}
+        {/* Spending Form Section - Moved up before featured cards */}
         <section id="spending-form" className="py-12">
           <div className="max-w-3xl mx-auto">
             <div className="mb-10 text-center">
@@ -159,6 +127,64 @@ const Index = () => {
             </div>
           </div>
         </section>
+        
+        {/* Featured Cards Section - Now below the spending form */}
+        <section id="featured-cards" className="py-12">
+          <div className="mb-8 text-center">
+            <Badge className="mb-2 px-3 py-1 bg-amber-500/20 text-amber-700 border-amber-200">
+              <TrendingUp className="h-3 w-3 mr-1" /> Featured
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">Top Credit Cards</h2>
+            <p className="text-muted-foreground">
+              Explore these popular credit cards with great rewards and benefits
+            </p>
+          </div>
+          
+          <div className="relative">
+            <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 z-10">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full shadow-md bg-background/90"
+                onClick={() => handleScroll('left')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <ScrollArea>
+              <div 
+                ref={scrollRef}
+                className="flex space-x-4 pb-4 px-1 overflow-x-auto scrollbar-none"
+              >
+                {featuredCards.map((card) => (
+                  <div key={`featured-${card.id}`} className="min-w-[260px] max-w-[300px] flex-shrink-0">
+                    <CardSuggestion
+                      card={card}
+                      isPromotion={true}
+                      isCompact={true}
+                      onSelect={() => handleCardSelect(card)}
+                      isSelected={selectedCards.some(c => c.id === card.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            
+            <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full shadow-md bg-background/90"
+                onClick={() => handleScroll('right')}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </section>
+        
+        <Separator className="my-8" />
         
         {/* Results Section */}
         {!showIntro && spending && recommendedCards.length > 0 && (

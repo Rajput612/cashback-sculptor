@@ -14,6 +14,7 @@ interface CardSuggestionProps {
   onSelect?: () => void;
   isSelected?: boolean;
   isPromotion?: boolean;
+  isCompact?: boolean;
 }
 
 const CardSuggestion: React.FC<CardSuggestionProps> = ({ 
@@ -22,11 +23,81 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
   className,
   onSelect,
   isSelected = false,
-  isPromotion = false
+  isPromotion = false,
+  isCompact = false
 }) => {
   const cashback = spending ? calculateCashback(card, spending) : 0;
   const netValue = spending ? cashback - card.annualFee : 0;
   
+  // Compact layout for when cards are displayed in columns
+  if (isCompact) {
+    return (
+      <div 
+        className={cn(
+          "relative overflow-hidden rounded-xl p-4 shadow-soft card-hover bg-card transition-all h-full flex flex-col",
+          isSelected && "ring-2 ring-primary",
+          isPromotion && "border border-amber-300/30 bg-amber-50/10",
+          className
+        )}
+      >
+        {isPromotion && (
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-amber-500/90 hover:bg-amber-500/80">
+              <Star className="h-3 w-3 mr-1 fill-current" /> Featured
+            </Badge>
+          </div>
+        )}
+        
+        <div className="flex-grow flex flex-col items-center">
+          <div className="w-full max-w-[180px] h-32 relative rounded-xl overflow-hidden shadow-md mb-3">
+            <img 
+              src={card.image} 
+              alt={`${card.issuer} ${card.name}`} 
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div className="text-center mb-3">
+            <h3 className="text-sm font-semibold">{card.issuer}</h3>
+            <p className="text-base font-bold">{card.name}</p>
+          </div>
+          
+          <div className="w-full p-2 bg-secondary/50 rounded-lg mb-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+              <CreditCardIcon className="h-3 w-3" />
+              <span>Annual Fee</span>
+            </div>
+            <div className="text-lg font-bold">₹{card.annualFee}</div>
+          </div>
+          
+          <div className="w-full space-y-2 mb-3">
+            <div className="text-xs font-medium">Top Rewards:</div>
+            {card.cashbackRates.slice(0, 2).map((rate, index) => (
+              <div key={`${card.id}-compact-rate-${index}`} className="flex items-center gap-2">
+                <span className="inline-block w-5 h-5 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-semibold">
+                  {rate.rate}%
+                </span>
+                <span className="text-xs capitalize">{rate.category}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {onSelect && (
+          <Button 
+            variant={isSelected ? "outline" : "default"} 
+            onClick={onSelect} 
+            className="w-full mt-auto text-sm py-1 h-auto"
+            size="sm"
+          >
+            {isSelected ? "Remove" : "Add to Compare"}
+          </Button>
+        )}
+      </div>
+    );
+  }
+  
+  // Original full layout for detailed view
   return (
     <div 
       className={cn(

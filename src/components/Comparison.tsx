@@ -49,15 +49,15 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-5 bg-secondary/50 rounded-lg text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Annual Cashback</p>
-            <p className="text-3xl font-bold text-primary">${totalCashback.toFixed(0)}</p>
+            <p className="text-3xl font-bold text-primary">₹{totalCashback.toFixed(0)}</p>
           </div>
           <div className="p-5 bg-secondary/50 rounded-lg text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Annual Fees</p>
-            <p className="text-3xl font-bold">${totalAnnualFees}</p>
+            <p className="text-3xl font-bold">₹{totalAnnualFees}</p>
           </div>
           <div className="p-5 bg-primary/10 rounded-lg text-center">
             <p className="text-sm font-medium mb-1">Net Value</p>
-            <p className="text-3xl font-bold text-primary">${totalNetValue.toFixed(0)}</p>
+            <p className="text-3xl font-bold text-primary">₹{totalNetValue.toFixed(0)}</p>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                   <td className="py-3 pr-6 font-medium">Annual Fee</td>
                   {cardsWithCashback.map(card => (
                     <td key={`fee-${card.id}`} className="py-3 px-4">
-                      ${card.annualFee}
+                      ₹{card.annualFee}
                     </td>
                   ))}
                 </tr>
@@ -89,7 +89,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                   <td className="py-3 pr-6 font-medium">Annual Cashback</td>
                   {cardsWithCashback.map(card => (
                     <td key={`cashback-${card.id}`} className="py-3 px-4 text-primary font-medium">
-                      ${card.cashback.toFixed(0)}
+                      ₹{card.cashback.toFixed(0)}
                     </td>
                   ))}
                 </tr>
@@ -97,7 +97,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                   <td className="py-3 pr-6 font-medium">Net Value</td>
                   {cardsWithCashback.map(card => (
                     <td key={`net-${card.id}`} className="py-3 px-4 text-primary font-medium">
-                      ${card.netValue.toFixed(0)}
+                      ₹{card.netValue.toFixed(0)}
                     </td>
                   ))}
                 </tr>
@@ -107,7 +107,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                     <td key={`signup-${card.id}`} className="py-3 px-4">
                       {card.signupBonus ? (
                         <div>
-                          <div className="font-medium">${card.signupBonus.amount}</div>
+                          <div className="font-medium">₹{card.signupBonus.amount}</div>
                           <div className="text-xs text-muted-foreground">{card.signupBonus.requirement}</div>
                         </div>
                       ) : (
@@ -134,7 +134,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                               <span className="font-medium">{rate.rate}%</span>
                               {rate.limit && (
                                 <span className="text-xs text-muted-foreground">
-                                  (up to ${rate.limit.toLocaleString()})
+                                  (up to ₹{rate.limit.toLocaleString()})
                                 </span>
                               )}
                             </div>
