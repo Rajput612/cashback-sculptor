@@ -3,9 +3,25 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MinusCircle, DollarSign, ShoppingCart, CreditCard } from 'lucide-react';
+import { 
+  PlusCircle, 
+  MinusCircle, 
+  IndianRupee, 
+  ShoppingCart, 
+  CreditCard, 
+  Home, 
+  BookOpen, 
+  Droplet,
+  Landmark
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Spending, initializeEmptySpending, updateSpendingTotals } from '@/lib/calculations';
+import { 
+  Spending, 
+  SpendingItem as SpendingItemType,
+  initializeEmptySpending, 
+  updateSpendingTotals 
+} from '@/lib/calculations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SpendingFormProps {
   className?: string;
@@ -15,45 +31,97 @@ interface SpendingFormProps {
 interface SpendingItemProps {
   name: string;
   amount: number;
+  category?: string;
+  brand?: string;
   onNameChange: (value: string) => void;
   onAmountChange: (value: number) => void;
+  onCategoryChange?: (value: string) => void;
+  onBrandChange?: (value: string) => void;
   onRemove: () => void;
+  showCategory?: boolean;
+  showBrand?: boolean;
+  categoryOptions?: string[];
+  brandOptions?: string[];
 }
 
 const SpendingItem: React.FC<SpendingItemProps> = ({ 
   name, 
   amount, 
+  category,
+  brand,
   onNameChange, 
-  onAmountChange, 
-  onRemove 
+  onAmountChange,
+  onCategoryChange,
+  onBrandChange, 
+  onRemove,
+  showCategory = false,
+  showBrand = false,
+  categoryOptions = [],
+  brandOptions = []
 }) => {
   return (
-    <div className="flex items-center gap-3 animate-scale-in">
-      <Input
-        value={name}
-        onChange={(e) => onNameChange(e.target.value)}
-        placeholder="Name (e.g. Amazon, Groceries)"
-        className="flex-1"
-      />
-      <div className="relative">
-        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+    <div className="flex flex-col gap-3 animate-scale-in">
+      <div className="flex items-center gap-3">
         <Input
-          type="number"
-          value={amount === 0 ? '' : amount}
-          onChange={(e) => onAmountChange(Number(e.target.value))}
-          placeholder="Amount"
-          className="pl-8 w-32"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder="Name (e.g. Amazon, Rent)"
+          className="flex-1"
         />
+        <div className="relative">
+          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="number"
+            value={amount === 0 ? '' : amount}
+            onChange={(e) => onAmountChange(Number(e.target.value))}
+            placeholder="Amount"
+            className="pl-8 w-32"
+          />
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onRemove}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <MinusCircle className="h-5 w-5" />
+          <span className="sr-only">Remove</span>
+        </Button>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={onRemove}
-        className="text-muted-foreground hover:text-destructive"
-      >
-        <MinusCircle className="h-5 w-5" />
-        <span className="sr-only">Remove</span>
-      </Button>
+      
+      {showCategory && onCategoryChange && (
+        <div className="flex items-center gap-3 pl-4">
+          <Select value={category} onValueChange={onCategoryChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryOptions.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
+      {showBrand && onBrandChange && (
+        <div className="flex items-center gap-3 pl-8">
+          <Select value={brand} onValueChange={onBrandChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select brand" />
+            </SelectTrigger>
+            <SelectContent>
+              {brandOptions.map((b) => (
+                <SelectItem key={b} value={b}>
+                  {b}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 };
@@ -63,31 +131,59 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
   const [activeTab, setActiveTab] = useState('online');
   const [activeSubTab, setActiveSubTab] = useState('merchants');
 
-  const addItem = (type: 'online' | 'offline', category: 'merchants' | 'categories' | 'brands') => {
+  // Common categories for Indian context
+  const commonCategories = [
+    'Groceries', 'Dining', 'Entertainment', 'Fuel', 'Travel', 
+    'Shopping', 'Electronics', 'Utilities', 'Education', 'Healthcare',
+    'Rent', 'EMI Payments', 'Insurance', 'Investments', 'Subscriptions'
+  ];
+
+  // Popular Indian brands by category
+  const brandsByCategory: Record<string, string[]> = {
+    'Groceries': ['Big Basket', 'Grofers', 'DMart', 'Reliance Fresh', 'Nature\'s Basket'],
+    'Dining': ['Zomato', 'Swiggy', 'EazyDiner', 'Dineout'],
+    'Entertainment': ['BookMyShow', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana'],
+    'Fuel': ['IOCL', 'BPCL', 'HPCL', 'Reliance Petroleum', 'Shell'],
+    'Travel': ['MakeMyTrip', 'Goibibo', 'Yatra', 'IRCTC', 'Cleartrip', 'Ola', 'Uber'],
+    'Shopping': ['Myntra', 'Flipkart', 'Amazon', 'Ajio', 'Nykaa', 'Tata Cliq'],
+    'Electronics': ['Croma', 'Reliance Digital', 'Vijay Sales', 'Amazon'],
+    'Utilities': ['Electricity Board', 'Water Board', 'Gas Connection', 'Mobile Recharge', 'Broadband'],
+    'Education': ['BYJU\'S', 'Unacademy', 'Vedantu', 'upGrad', 'School/College Fees'],
+    'Healthcare': ['Apollo', 'Practo', 'PharmEasy', '1mg', 'Netmeds'],
+    'Investments': ['Zerodha', 'Groww', 'Upstox', 'Paytm Money', 'ICICI Direct'],
+    'Subscriptions': ['Netflix', 'Amazon Prime', 'Hotstar', 'Spotify', 'YouTube Premium']
+  };
+
+  const addItem = (type: 'online' | 'offline', subType: 'merchants' | 'categories' | 'bills') => {
     const newSpending = { ...spending };
-    newSpending[type][category].push({ name: '', amount: 0 });
+    newSpending[type][subType].push({ 
+      name: '', 
+      amount: 0,
+      category: subType === 'merchants' ? commonCategories[0] : undefined,
+      brand: undefined
+    });
     setSpending(newSpending);
   };
 
   const updateItem = (
     type: 'online' | 'offline',
-    category: 'merchants' | 'categories' | 'brands',
+    subType: 'merchants' | 'categories' | 'bills',
     index: number,
-    field: 'name' | 'amount',
+    field: keyof SpendingItemType,
     value: string | number
   ) => {
     const newSpending = { ...spending };
-    newSpending[type][category][index][field] = value;
+    newSpending[type][subType][index][field] = value;
     setSpending(updateSpendingTotals(newSpending));
   };
 
   const removeItem = (
     type: 'online' | 'offline',
-    category: 'merchants' | 'categories' | 'brands',
+    subType: 'merchants' | 'categories' | 'bills',
     index: number
   ) => {
     const newSpending = { ...spending };
-    newSpending[type][category].splice(index, 1);
+    newSpending[type][subType].splice(index, 1);
     setSpending(updateSpendingTotals(newSpending));
   };
 
@@ -123,9 +219,9 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               className="w-full"
             >
               <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="merchants">Merchants</TabsTrigger>
+                <TabsTrigger value="merchants">Apps/Websites</TabsTrigger>
                 <TabsTrigger value="categories">Categories</TabsTrigger>
-                <TabsTrigger value="brands">Brands</TabsTrigger>
+                <TabsTrigger value="bills">Bills & Payments</TabsTrigger>
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
@@ -135,9 +231,17 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       key={`online-merchant-${index}`}
                       name={item.name}
                       amount={item.amount}
+                      category={item.category}
+                      brand={item.brand}
                       onNameChange={(value) => updateItem('online', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('online', 'merchants', index, 'amount', value)}
+                      onCategoryChange={(value) => updateItem('online', 'merchants', index, 'category', value)}
+                      onBrandChange={(value) => updateItem('online', 'merchants', index, 'brand', value)}
                       onRemove={() => removeItem('online', 'merchants', index)}
+                      showCategory={true}
+                      categoryOptions={commonCategories}
+                      showBrand={!!item.category}
+                      brandOptions={item.category ? brandsByCategory[item.category] || [] : []}
                     />
                   ))}
                 </div>
@@ -150,7 +254,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   className="flex items-center gap-2"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  <span>Add Merchant</span>
+                  <span>Add App/Website</span>
                 </Button>
               </TabsContent>
 
@@ -180,16 +284,16 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                 </Button>
               </TabsContent>
 
-              <TabsContent value="brands" className="mt-4 space-y-4">
+              <TabsContent value="bills" className="mt-4 space-y-4">
                 <div className="space-y-3 stagger-animation">
-                  {spending.online.brands.map((item, index) => (
+                  {spending.online.bills.map((item, index) => (
                     <SpendingItem
-                      key={`online-brand-${index}`}
+                      key={`online-bill-${index}`}
                       name={item.name}
                       amount={item.amount}
-                      onNameChange={(value) => updateItem('online', 'brands', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('online', 'brands', index, 'amount', value)}
-                      onRemove={() => removeItem('online', 'brands', index)}
+                      onNameChange={(value) => updateItem('online', 'bills', index, 'name', value)}
+                      onAmountChange={(value) => updateItem('online', 'bills', index, 'amount', value)}
+                      onRemove={() => removeItem('online', 'bills', index)}
                     />
                   ))}
                 </div>
@@ -198,11 +302,11 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   type="button" 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => addItem('online', 'brands')}
+                  onClick={() => addItem('online', 'bills')}
                   className="flex items-center gap-2"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  <span>Add Brand</span>
+                  <span>Add Bill/Payment</span>
                 </Button>
               </TabsContent>
             </Tabs>
@@ -216,9 +320,9 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               className="w-full"
             >
               <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="merchants">Merchants</TabsTrigger>
+                <TabsTrigger value="merchants">Stores/Shops</TabsTrigger>
                 <TabsTrigger value="categories">Categories</TabsTrigger>
-                <TabsTrigger value="brands">Brands</TabsTrigger>
+                <TabsTrigger value="bills">Bills & Payments</TabsTrigger>
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
@@ -228,9 +332,17 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       key={`offline-merchant-${index}`}
                       name={item.name}
                       amount={item.amount}
+                      category={item.category}
+                      brand={item.brand}
                       onNameChange={(value) => updateItem('offline', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('offline', 'merchants', index, 'amount', value)}
+                      onCategoryChange={(value) => updateItem('offline', 'merchants', index, 'category', value)}
+                      onBrandChange={(value) => updateItem('offline', 'merchants', index, 'brand', value)}
                       onRemove={() => removeItem('offline', 'merchants', index)}
+                      showCategory={true}
+                      categoryOptions={commonCategories}
+                      showBrand={!!item.category}
+                      brandOptions={item.category ? brandsByCategory[item.category] || [] : []}
                     />
                   ))}
                 </div>
@@ -243,7 +355,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   className="flex items-center gap-2"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  <span>Add Merchant</span>
+                  <span>Add Store/Shop</span>
                 </Button>
               </TabsContent>
 
@@ -273,16 +385,16 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                 </Button>
               </TabsContent>
 
-              <TabsContent value="brands" className="mt-4 space-y-4">
+              <TabsContent value="bills" className="mt-4 space-y-4">
                 <div className="space-y-3 stagger-animation">
-                  {spending.offline.brands.map((item, index) => (
+                  {spending.offline.bills.map((item, index) => (
                     <SpendingItem
-                      key={`offline-brand-${index}`}
+                      key={`offline-bill-${index}`}
                       name={item.name}
                       amount={item.amount}
-                      onNameChange={(value) => updateItem('offline', 'brands', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('offline', 'brands', index, 'amount', value)}
-                      onRemove={() => removeItem('offline', 'brands', index)}
+                      onNameChange={(value) => updateItem('offline', 'bills', index, 'name', value)}
+                      onAmountChange={(value) => updateItem('offline', 'bills', index, 'amount', value)}
+                      onRemove={() => removeItem('offline', 'bills', index)}
                     />
                   ))}
                 </div>
@@ -291,11 +403,11 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   type="button" 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => addItem('offline', 'brands')}
+                  onClick={() => addItem('offline', 'bills')}
                   className="flex items-center gap-2"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  <span>Add Brand</span>
+                  <span>Add Bill/Payment</span>
                 </Button>
               </TabsContent>
             </Tabs>
@@ -303,9 +415,114 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
         </Tabs>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => {
+            // Add common expenses
+            const newSpending = { ...spending };
+            
+            // Add rent
+            newSpending.offline.bills.push({ name: 'Rent', amount: 20000, category: 'Housing' });
+            
+            // Add common bills
+            newSpending.online.bills.push({ name: 'Electricity Bill', amount: 2000, category: 'Utilities' });
+            newSpending.online.bills.push({ name: 'Mobile Recharge', amount: 500, category: 'Utilities' });
+            newSpending.online.bills.push({ name: 'Internet Bill', amount: 1000, category: 'Utilities' });
+            
+            // Add common shopping
+            newSpending.online.merchants.push({ 
+              name: 'Amazon', 
+              amount: 5000, 
+              category: 'Shopping',
+              brand: 'Amazon' 
+            });
+            
+            // Add groceries
+            newSpending.offline.merchants.push({ 
+              name: 'Grocery Store', 
+              amount: 8000, 
+              category: 'Groceries' 
+            });
+            
+            // Add dining
+            newSpending.online.merchants.push({ 
+              name: 'Zomato', 
+              amount: 3000, 
+              category: 'Dining',
+              brand: 'Zomato'
+            });
+            
+            setSpending(updateSpendingTotals(newSpending));
+          }}
+          className="flex items-center gap-2"
+        >
+          <Home className="h-4 w-4" />
+          <span>Add Common Expenses</span>
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => {
+            // Add education expenses
+            const newSpending = { ...spending };
+            newSpending.offline.bills.push({ name: 'School/College Fees', amount: 25000, category: 'Education' });
+            newSpending.online.merchants.push({ 
+              name: 'BYJU\'S', 
+              amount: 2000, 
+              category: 'Education',
+              brand: 'BYJU\'S' 
+            });
+            setSpending(updateSpendingTotals(newSpending));
+          }}
+          className="flex items-center gap-2"
+        >
+          <BookOpen className="h-4 w-4" />
+          <span>Add Education Expenses</span>
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => {
+            // Add utility bills
+            const newSpending = { ...spending };
+            newSpending.online.bills.push({ name: 'Water Bill', amount: 500, category: 'Utilities' });
+            newSpending.online.bills.push({ name: 'Gas Bill', amount: 800, category: 'Utilities' });
+            setSpending(updateSpendingTotals(newSpending));
+          }}
+          className="flex items-center gap-2"
+        >
+          <Droplet className="h-4 w-4" />
+          <span>Add Utility Bills</span>
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => {
+            // Add EMI payments
+            const newSpending = { ...spending };
+            newSpending.online.bills.push({ name: 'Home Loan EMI', amount: 15000, category: 'EMI Payments' });
+            newSpending.online.bills.push({ name: 'Car Loan EMI', amount: 8000, category: 'EMI Payments' });
+            setSpending(updateSpendingTotals(newSpending));
+          }}
+          className="flex items-center gap-2"
+        >
+          <Landmark className="h-4 w-4" />
+          <span>Add EMI Payments</span>
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between px-4 py-3 bg-muted/40 rounded-lg">
-        <div className="text-sm text-muted-foreground">Total Spending</div>
-        <div className="font-medium">${spending.total.toLocaleString()}</div>
+        <div className="text-sm text-muted-foreground">Total Monthly Spending</div>
+        <div className="font-medium">₹{spending.total.toLocaleString()}</div>
       </div>
 
       <div className="pt-4">

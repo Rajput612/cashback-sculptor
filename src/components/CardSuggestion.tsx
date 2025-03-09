@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CreditCard as CreditCardIcon, DollarSign, CreditCard, Award, Info } from 'lucide-react';
+import { CreditCard as CreditCardIcon, IndianRupee, CreditCard, Award, Info, Gift, Zap, Plane } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard as CardType, Spending, calculateCashback } from '@/lib/calculations';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +39,14 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
         </div>
       )}
       
+      {card.isCoBranded && (
+        <div className="absolute top-2 left-2">
+          <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
+            Co-branded with {card.coPartner}
+          </Badge>
+        </div>
+      )}
+      
       <div className="flex flex-col md:flex-row gap-6">
         <div className="md:w-1/3 flex flex-col items-center justify-center">
           <div className="w-full h-48 relative rounded-xl overflow-hidden shadow-md transform transition-transform hover:rotate-1 hover:scale-105">
@@ -59,32 +67,36 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-secondary/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <DollarSign className="h-4 w-4" />
+                <IndianRupee className="h-4 w-4" />
                 <span>Annual Cashback</span>
               </div>
-              <div className="text-2xl font-bold text-primary">${cashback.toFixed(0)}</div>
+              <div className="text-2xl font-bold text-primary">₹{(cashback * 12).toFixed(0)}</div>
+              <div className="text-xs text-muted-foreground">₹{cashback.toFixed(0)} monthly</div>
             </div>
             <div className="p-4 bg-secondary/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                 <CreditCardIcon className="h-4 w-4" />
                 <span>Annual Fee</span>
               </div>
-              <div className="text-2xl font-bold">${card.annualFee}</div>
+              <div className="text-2xl font-bold">₹{card.annualFee}</div>
+              {card.feeWaiver && (
+                <div className="text-xs text-muted-foreground">{card.feeWaiver}</div>
+              )}
             </div>
           </div>
           
           <div className="p-4 bg-primary/5 rounded-lg">
             <div className="flex items-center gap-2 text-sm font-medium mb-1">
               <Award className="h-4 w-4 text-primary" />
-              <span>Net Value</span>
+              <span>Net Annual Value</span>
             </div>
-            <div className="text-3xl font-bold text-primary">${netValue.toFixed(0)}</div>
+            <div className="text-3xl font-bold text-primary">₹{(netValue * 12).toFixed(0)}</div>
           </div>
           
           <Separator />
           
           <div className="space-y-3">
-            <h4 className="font-medium">Cash Back Rates</h4>
+            <h4 className="font-medium">Rewards & Cashback</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {card.cashbackRates.map((rate, index) => (
                 <div key={`${card.id}-rate-${index}`} className="flex items-center gap-2">
@@ -94,7 +106,7 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
                   <span className="capitalize">{rate.category}</span>
                   {rate.limit && (
                     <span className="text-xs text-muted-foreground">
-                      (up to ${rate.limit.toLocaleString()})
+                      (up to ₹{rate.limit.toLocaleString()})
                     </span>
                   )}
                 </div>
@@ -107,15 +119,48 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
               <Separator />
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-primary" />
-                  <h4 className="font-medium">Signup Bonus</h4>
+                  <Gift className="h-4 w-4 text-primary" />
+                  <h4 className="font-medium">Welcome Bonus</h4>
                 </div>
                 <p className="text-sm">
-                  <span className="font-medium">${card.signupBonus.amount}</span> - {card.signupBonus.requirement}
+                  <span className="font-medium">₹{card.signupBonus.amount}</span> - {card.signupBonus.requirement}
                 </p>
               </div>
             </>
           )}
+          
+          <Separator />
+          <div className="space-y-3">
+            <h4 className="font-medium">Key Benefits</h4>
+            <div className="grid grid-cols-1 gap-2">
+              {card.lounge && (card.lounge.domestic || card.lounge.international) && (
+                <div className="flex items-center gap-2">
+                  <Plane className="h-4 w-4 text-primary" />
+                  <span className="text-sm">
+                    Airport Lounge Access: 
+                    {card.lounge.domestic ? ` ${card.lounge.domestic} domestic` : ""}
+                    {card.lounge.domestic && card.lounge.international ? " and" : ""}
+                    {card.lounge.international ? ` ${card.lounge.international} international` : ""}
+                    {" visits per year"}
+                  </span>
+                </div>
+              )}
+              
+              {card.fuelSurchargeWaiver && (
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Fuel surcharge waiver</span>
+                </div>
+              )}
+              
+              {card.benefits.slice(0, 3).map((benefit, index) => (
+                <div key={`${card.id}-benefit-${index}`} className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-primary" />
+                  <span className="text-sm">{benefit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           
           <div className="pt-4">
             <Button 
