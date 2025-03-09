@@ -1,11 +1,20 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CreditCard as CreditCardIcon, IndianRupee, CreditCard, Award, Info, Gift, Zap, Plane, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CreditCard as CreditCardIcon, IndianRupee, Award, Info, Gift, Zap, Plane, Star, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard as CardType, Spending, calculateCashback } from '@/lib/calculations';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+
+const defaultCardImages = {
+  'hdfc': 'https://www.hdfcbank.com/content/api/contentstream-id/723fb80a-2dde-42a3-9793-7ae1be57c87f/f15c5193-7933-4b56-a98b-a1132dfbac81/Personal/Pay/Cards/Credit-Cards/Credit-Cards/Regalia/regalia-gold-card.png',
+  'sbi': 'https://www.sbicard.com/creditcards/resources/img/prime-card.png',
+  'icici': 'https://www.icicibank.com/content/dam/icicibank/managed-assets/images/credit-card/best-of-icici-bank-credit-cards-big-picture.png',
+  'axis': 'https://www.axisbank.com/images/default-source/progress-with-us_new/ace-credit-card.jpg',
+  'kotak': 'https://www.kotak.com/content/dam/Kotak/product_card_images/811-dreamdifferent-creditcard-updated-card.png',
+  'amex': 'https://www.americanexpress.com/content/dam/amex/in/homepage/img/platinum_reserve_card.png'
+};
 
 interface CardSuggestionProps {
   card: CardType;
@@ -29,7 +38,8 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
   const cashback = spending ? calculateCashback(card, spending) : 0;
   const netValue = spending ? cashback - card.annualFee : 0;
   
-  // Compact layout for when cards are displayed in columns
+  const cardImage = card.image || defaultCardImages[card.issuer.toLowerCase()] || defaultCardImages['hdfc'];
+  
   if (isCompact) {
     return (
       <div 
@@ -49,11 +59,11 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
         )}
         
         <div className="flex-grow flex flex-col items-center">
-          <div className="w-full max-w-[180px] h-32 relative rounded-xl overflow-hidden shadow-md mb-3">
+          <div className="w-full max-w-[180px] h-28 relative rounded-lg overflow-hidden shadow-md mb-3 bg-gradient-to-br from-gray-100 to-gray-200">
             <img 
-              src={card.image} 
+              src={cardImage} 
               alt={`${card.issuer} ${card.name}`} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-2"
               loading="lazy"
             />
           </div>
@@ -62,12 +72,12 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
             <p className="text-base font-bold">{card.name}</p>
           </div>
           
-          <div className="w-full p-2 bg-secondary/50 rounded-lg mb-3">
+          <div className="w-full p-2 bg-secondary/30 rounded-lg mb-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <CreditCardIcon className="h-3 w-3" />
               <span>Annual Fee</span>
             </div>
-            <div className="text-lg font-bold">₹{card.annualFee}</div>
+            <div className="text-base font-bold">₹{card.annualFee}</div>
           </div>
           
           <div className="w-full space-y-2 mb-3">
@@ -83,21 +93,32 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
           </div>
         </div>
         
-        {onSelect && (
-          <Button 
-            variant={isSelected ? "outline" : "default"} 
-            onClick={onSelect} 
-            className="w-full mt-auto text-sm py-1 h-auto"
-            size="sm"
-          >
-            {isSelected ? "Remove" : "Add to Compare"}
-          </Button>
-        )}
+        <div className="flex gap-2 mt-auto">
+          {onSelect && (
+            <Button 
+              variant={isSelected ? "outline" : "default"} 
+              onClick={onSelect} 
+              className="flex-1 text-xs py-1 h-auto"
+              size="sm"
+            >
+              {isSelected ? "Remove" : "Compare"}
+            </Button>
+          )}
+          
+          <Link to={`/card/${card.id}`} className="block">
+            <Button 
+              variant="outline"
+              size="sm"
+              className="text-xs py-1 h-auto"
+            >
+              <ExternalLink className="h-3 w-3 mr-1" /> Details
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
   
-  // Original full layout for detailed view
   return (
     <div 
       className={cn(
@@ -131,17 +152,27 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
       
       <div className="flex flex-col md:flex-row gap-6">
         <div className="md:w-1/3 flex flex-col items-center justify-center">
-          <div className="w-full h-48 relative rounded-xl overflow-hidden shadow-md transform transition-transform hover:rotate-1 hover:scale-105">
+          <div className="w-full h-48 relative rounded-xl overflow-hidden shadow-md transform transition-transform hover:rotate-1 hover:scale-105 bg-gradient-to-br from-gray-100 to-gray-200">
             <img 
-              src={card.image} 
+              src={cardImage} 
               alt={`${card.issuer} ${card.name}`} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-4"
               loading="lazy"
             />
           </div>
           <div className="mt-4 text-center">
             <h3 className="text-lg font-semibold">{card.issuer}</h3>
             <p className="text-xl font-bold">{card.name}</p>
+            
+            <Link to={`/card/${card.id}`} className="inline-block mt-2">
+              <Button 
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                <ExternalLink className="h-3 w-3 mr-1" /> View Details
+              </Button>
+            </Link>
           </div>
         </div>
         

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -16,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, TrendingUp, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -26,7 +25,6 @@ const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  // Featured cards for promotion (show regardless of spending)
   const featuredCards = creditCards.filter(card => 
     ["hdfc-infinia", "sbi-elite", "icici-amazon", "axis-flipkart"].includes(card.id)
   );
@@ -44,31 +42,24 @@ const Index = () => {
   const handleSpendingSubmit = (spendingData: Spending) => {
     setSpending(spendingData);
     
-    // Get the best card combinations based on spending
     const bestCards = getBestCardCombinations(spendingData, 5);
     setRecommendedCards(bestCards);
     
-    // Automatically select the top 2 cards for comparison
     setSelectedCards(bestCards.slice(0, 2));
     
-    // Hide the intro content
     setShowIntro(false);
     
-    // Show success toast
     toast.success('We found the best credit cards for your spending!', {
       description: 'Based on your spending patterns, we recommend these cards.'
     });
     
-    // Smooth scroll to results
     document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleCardSelect = (card: CreditCard) => {
     if (selectedCards.some(c => c.id === card.id)) {
-      // Remove card if already selected
       setSelectedCards(selectedCards.filter(c => c.id !== card.id));
     } else {
-      // Add card if not already selected (limit to 3)
       if (selectedCards.length < 3) {
         setSelectedCards([...selectedCards, card]);
       } else {
@@ -85,17 +76,15 @@ const Index = () => {
     setSelectedCards([]);
     setShowIntro(true);
     
-    // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col relative">
       <AnimatedBackground />
       <Header />
       
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 pb-20">
-        {/* Hero Section */}
         <section className="py-16 text-center max-w-3xl mx-auto">
           <Badge className="mb-5 px-3 py-1 bg-primary/10 text-primary border-primary/20 animate-fade-in">
             Maximize Your Cash Back
@@ -109,7 +98,6 @@ const Index = () => {
           </p>
         </section>
         
-        {/* Spending Form Section - Moved up before featured cards */}
         <section id="spending-form" className="py-12">
           <div className="max-w-3xl mx-auto">
             <div className="mb-10 text-center">
@@ -128,19 +116,18 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Featured Cards Section - Now below the spending form */}
         <section id="featured-cards" className="py-12">
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center">
             <Badge className="mb-2 px-3 py-1 bg-amber-500/20 text-amber-700 border-amber-200">
               <TrendingUp className="h-3 w-3 mr-1" /> Featured
             </Badge>
-            <h2 className="text-3xl font-bold mb-4">Top Credit Cards</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold mb-2">Top Credit Cards</h2>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
               Explore these popular credit cards with great rewards and benefits
             </p>
           </div>
           
-          <div className="relative">
+          <div className="relative px-4">
             <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 z-10">
               <Button 
                 variant="outline" 
@@ -152,13 +139,13 @@ const Index = () => {
               </Button>
             </div>
             
-            <ScrollArea>
+            <ScrollArea className="w-full pb-4">
               <div 
                 ref={scrollRef}
-                className="flex space-x-4 pb-4 px-1 overflow-x-auto scrollbar-none"
+                className="flex space-x-4 pb-1 px-1"
               >
                 {featuredCards.map((card) => (
-                  <div key={`featured-${card.id}`} className="min-w-[260px] max-w-[300px] flex-shrink-0">
+                  <div key={`featured-${card.id}`} className="min-w-[220px] max-w-[220px] flex-shrink-0">
                     <CardSuggestion
                       card={card}
                       isPromotion={true}
@@ -169,6 +156,7 @@ const Index = () => {
                   </div>
                 ))}
               </div>
+              <ScrollBar orientation="horizontal" />
             </ScrollArea>
             
             <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
@@ -186,7 +174,6 @@ const Index = () => {
         
         <Separator className="my-8" />
         
-        {/* Results Section */}
         {!showIntro && spending && recommendedCards.length > 0 && (
           <section id="results" className="py-12 min-h-screen">
             <div className="mb-10 text-center">
@@ -228,7 +215,6 @@ const Index = () => {
           </section>
         )}
         
-        {/* Introduction/How It Works (shown when no results yet) */}
         {showIntro && (
           <section className="py-12">
             <div className="max-w-4xl mx-auto">

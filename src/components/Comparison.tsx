@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { CreditCard, Spending, calculateCashback } from '@/lib/calculations';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface ComparisonProps {
   cards: CreditCard[];
@@ -62,7 +62,7 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
         </div>
       </div>
       
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[400px] overflow-hidden">
         <div className="p-6">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -116,12 +116,13 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                     </td>
                   ))}
                 </tr>
-                {/* Cashback rates by category */}
+                
                 <tr className="border-b bg-muted/30">
                   <td colSpan={cardsWithCashback.length + 1} className="py-3 px-4 font-medium">
                     Cashback Rates by Category
                   </td>
                 </tr>
+                
                 {Array.from(allCategories).map(category => (
                   <tr key={`category-${category}`} className="border-b">
                     <td className="py-3 pr-6 font-medium capitalize">{category}</td>
@@ -146,12 +147,13 @@ const Comparison: React.FC<ComparisonProps> = ({ cards, spending, className }) =
                     })}
                   </tr>
                 ))}
-                {/* Benefits */}
+                
                 <tr className="border-b bg-muted/30">
                   <td colSpan={cardsWithCashback.length + 1} className="py-3 px-4 font-medium">
                     Benefits
                   </td>
                 </tr>
+                
                 {cards.map(card => 
                   card.benefits.map((benefit, idx) => (
                     <tr key={`benefit-${card.id}-${idx}`} className="border-b">

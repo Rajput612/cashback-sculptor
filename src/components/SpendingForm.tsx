@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -16,16 +15,20 @@ import {
   ShoppingBag,
   Utensils,
   Car,
-  Smartphone
+  Smartphone,
+  ChevronRight,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Spending, 
-  SpendingItem as SpendingItemType,
-  initializeEmptySpending, 
   updateSpendingTotals 
 } from '@/lib/calculations';
+import { SpendingItem as SpendingItemType } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { toast } from 'sonner';
 
 interface SpendingFormProps {
   className?: string;
@@ -52,6 +55,23 @@ interface SpendingItemProps {
   appOptions?: string[];
 }
 
+// Helper function to initialize empty spending
+const initializeEmptySpending = (): Spending => {
+  return {
+    online: {
+      merchants: [],
+      categories: [],
+      bills: []
+    },
+    offline: {
+      merchants: [],
+      categories: [],
+      bills: []
+    },
+    total: 0
+  };
+};
+
 const SpendingItem: React.FC<SpendingItemProps> = ({ 
   name, 
   amount, 
@@ -71,8 +91,10 @@ const SpendingItem: React.FC<SpendingItemProps> = ({
   brandOptions = [],
   appOptions = []
 }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  
   return (
-    <div className="flex flex-col gap-3 animate-scale-in">
+    <div className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
       <div className="flex items-center gap-3">
         <Input
           value={name}
@@ -90,6 +112,18 @@ const SpendingItem: React.FC<SpendingItemProps> = ({
             className="pl-8 w-32"
           />
         </div>
+        
+        {(showCategory || showApp || showBrand) && (
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+            className="px-2"
+          >
+            {showDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+        )}
+        
         <Button 
           variant="ghost" 
           size="icon" 
@@ -101,54 +135,61 @@ const SpendingItem: React.FC<SpendingItemProps> = ({
         </Button>
       </div>
       
-      {showCategory && onCategoryChange && (
-        <div className="flex items-center gap-3 pl-4">
-          <Select value={category} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryOptions.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {showApp && onAppChange && (
-        <div className="flex items-center gap-3 pl-4">
-          <Select value={app} onValueChange={onAppChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select app/platform" />
-            </SelectTrigger>
-            <SelectContent>
-              {appOptions.map((a) => (
-                <SelectItem key={a} value={a}>
-                  {a}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {showBrand && onBrandChange && (
-        <div className="flex items-center gap-3 pl-8">
-          <Select value={brand} onValueChange={onBrandChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select brand" />
-            </SelectTrigger>
-            <SelectContent>
-              {brandOptions.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {showDetails && (
+        <div className="space-y-3 pl-4 pt-1 animate-slide-down">
+          {showCategory && onCategoryChange && (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground w-24">Category:</p>
+              <Select value={category} onValueChange={onCategoryChange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {showApp && onAppChange && category && appOptions.length > 0 && (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground w-24">App/Platform:</p>
+              <Select value={app} onValueChange={onAppChange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select app/platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {appOptions.map((a) => (
+                    <SelectItem key={a} value={a}>
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {showBrand && onBrandChange && category && brandOptions.length > 0 && (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground w-24">Brand:</p>
+              <Select value={brand} onValueChange={onBrandChange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {brandOptions.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -219,7 +260,10 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     value: string | number
   ) => {
     const newSpending = { ...spending };
-    newSpending[type][subType][index][field] = value;
+    
+    // Type assertion to any because SpendingItem has been updated in types.ts
+    (newSpending[type][subType][index] as any)[field] = value;
+    
     setSpending(updateSpendingTotals(newSpending));
   };
 
@@ -235,6 +279,12 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (spending.total === 0) {
+      toast.warning("Please add some spending information first");
+      return;
+    }
+    
     onSubmit(spending);
   };
 
@@ -276,6 +326,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     });
     
     setSpending(updateSpendingTotals(newSpending));
+    toast.success("Added popular apps to your spending");
   };
 
   const addCommonExpenses = () => {
@@ -315,6 +366,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     });
     
     setSpending(updateSpendingTotals(newSpending));
+    toast.success("Added common expenses to your spending");
   };
 
   return (
@@ -350,7 +402,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.online.merchants.map((item, index) => (
                     <SpendingItem
                       key={`online-merchant-${index}`}
@@ -358,7 +410,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       amount={item.amount}
                       category={item.category}
                       brand={item.brand}
-                      app={item.app}
+                      app={(item as any).app}
                       onNameChange={(value) => updateItem('online', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('online', 'merchants', index, 'amount', value)}
                       onCategoryChange={(value) => updateItem('online', 'merchants', index, 'category', value)}
@@ -388,7 +440,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsContent>
 
               <TabsContent value="categories" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.online.categories.map((item, index) => (
                     <SpendingItem
                       key={`online-category-${index}`}
@@ -414,7 +466,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsContent>
 
               <TabsContent value="bills" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.online.bills.map((item, index) => (
                     <SpendingItem
                       key={`online-bill-${index}`}
@@ -455,7 +507,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.offline.merchants.map((item, index) => (
                     <SpendingItem
                       key={`offline-merchant-${index}`}
@@ -489,7 +541,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsContent>
 
               <TabsContent value="categories" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.offline.categories.map((item, index) => (
                     <SpendingItem
                       key={`offline-category-${index}`}
@@ -515,7 +567,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               </TabsContent>
 
               <TabsContent value="bills" className="mt-4 space-y-4">
-                <div className="space-y-3 stagger-animation">
+                <div className="space-y-3">
                   {spending.offline.bills.map((item, index) => (
                     <SpendingItem
                       key={`offline-bill-${index}`}
@@ -544,127 +596,140 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
         </Tabs>
       </div>
 
-      {/* Quick Add Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={addCommonExpenses}
-          className="flex items-center gap-2"
-        >
-          <Home className="h-4 w-4" />
-          <span>Add Common Expenses</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={addPopularApps}
-          className="flex items-center gap-2"
-        >
-          <Smartphone className="h-4 w-4" />
-          <span>Add Popular Apps</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => {
-            // Add education expenses
-            const newSpending = { ...spending };
-            newSpending.offline.bills.push({ name: 'School/College Fees', amount: 25000, category: 'Education' });
-            newSpending.online.merchants.push({ 
-              name: 'BYJU\'S', 
-              amount: 2000, 
-              category: 'Education',
-              brand: 'BYJU\'S',
-              app: 'BYJU\'S'
-            });
-            setSpending(updateSpendingTotals(newSpending));
-          }}
-          className="flex items-center gap-2"
-        >
-          <BookOpen className="h-4 w-4" />
-          <span>Add Education Expenses</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => {
-            // Add utility bills
-            const newSpending = { ...spending };
-            newSpending.online.bills.push({ name: 'Water Bill', amount: 500, category: 'Utilities' });
-            newSpending.online.bills.push({ name: 'Gas Bill', amount: 800, category: 'Utilities' });
-            setSpending(updateSpendingTotals(newSpending));
-          }}
-          className="flex items-center gap-2"
-        >
-          <Droplet className="h-4 w-4" />
-          <span>Add Utility Bills</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => {
-            // Add EMI payments
-            const newSpending = { ...spending };
-            newSpending.online.bills.push({ name: 'Home Loan EMI', amount: 15000, category: 'EMI Payments' });
-            newSpending.online.bills.push({ name: 'Car Loan EMI', amount: 8000, category: 'EMI Payments' });
-            setSpending(updateSpendingTotals(newSpending));
-          }}
-          className="flex items-center gap-2"
-        >
-          <Landmark className="h-4 w-4" />
-          <span>Add EMI Payments</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="secondary" 
-          size="sm" 
-          onClick={() => {
-            // Add daily expenses
-            const newSpending = { ...spending };
+      {/* Quick Add Buttons - Modified to be in a collapsible section */}
+      <Collapsible className="mb-4">
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" type="button" className="flex w-full items-center justify-between">
+            <span className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              <span>Quick Add Templates</span>
+            </span>
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={addCommonExpenses}
+              className="flex items-center gap-2"
+            >
+              <Home className="h-4 w-4" />
+              <span>Add Common Expenses</span>
+            </Button>
             
-            // Shopping
-            newSpending.offline.merchants.push({ 
-              name: 'Department Store', 
-              amount: 3000, 
-              category: 'Shopping',
-              brand: undefined
-            });
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={addPopularApps}
+              className="flex items-center gap-2"
+            >
+              <Smartphone className="h-4 w-4" />
+              <span>Add Popular Apps</span>
+            </Button>
             
-            // Fuel
-            newSpending.offline.merchants.push({ 
-              name: 'Petrol Pump', 
-              amount: 4000, 
-              category: 'Fuel',
-              brand: 'HPCL'
-            });
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => {
+                // Add education expenses
+                const newSpending = { ...spending };
+                newSpending.offline.bills.push({ name: 'School/College Fees', amount: 25000, category: 'Education' });
+                newSpending.online.merchants.push({ 
+                  name: 'BYJU\'S', 
+                  amount: 2000, 
+                  category: 'Education',
+                  brand: 'BYJU\'S',
+                  app: 'BYJU\'S'
+                });
+                setSpending(updateSpendingTotals(newSpending));
+              }}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span>Add Education Expenses</span>
+            </Button>
             
-            // Dining
-            newSpending.offline.merchants.push({ 
-              name: 'Restaurants', 
-              amount: 2500, 
-              category: 'Dining',
-              brand: undefined
-            });
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => {
+                // Add utility bills
+                const newSpending = { ...spending };
+                newSpending.online.bills.push({ name: 'Water Bill', amount: 500, category: 'Utilities' });
+                newSpending.online.bills.push({ name: 'Gas Bill', amount: 800, category: 'Utilities' });
+                setSpending(updateSpendingTotals(newSpending));
+              }}
+              className="flex items-center gap-2"
+            >
+              <Droplet className="h-4 w-4" />
+              <span>Add Utility Bills</span>
+            </Button>
             
-            setSpending(updateSpendingTotals(newSpending));
-          }}
-          className="flex items-center gap-2"
-        >
-          <Car className="h-4 w-4" />
-          <span>Add Daily Expenses</span>
-        </Button>
-      </div>
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => {
+                // Add EMI payments
+                const newSpending = { ...spending };
+                newSpending.online.bills.push({ name: 'Home Loan EMI', amount: 15000, category: 'EMI Payments' });
+                newSpending.online.bills.push({ name: 'Car Loan EMI', amount: 8000, category: 'EMI Payments' });
+                setSpending(updateSpendingTotals(newSpending));
+              }}
+              className="flex items-center gap-2"
+            >
+              <Landmark className="h-4 w-4" />
+              <span>Add EMI Payments</span>
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => {
+                // Add daily expenses
+                const newSpending = { ...spending };
+                
+                // Shopping
+                newSpending.offline.merchants.push({ 
+                  name: 'Department Store', 
+                  amount: 3000, 
+                  category: 'Shopping',
+                  brand: undefined
+                });
+                
+                // Fuel
+                newSpending.offline.merchants.push({ 
+                  name: 'Petrol Pump', 
+                  amount: 4000, 
+                  category: 'Fuel',
+                  brand: 'HPCL'
+                });
+                
+                // Dining
+                newSpending.offline.merchants.push({ 
+                  name: 'Restaurants', 
+                  amount: 2500, 
+                  category: 'Dining',
+                  brand: undefined
+                });
+                
+                setSpending(updateSpendingTotals(newSpending));
+              }}
+              className="flex items-center gap-2"
+            >
+              <Car className="h-4 w-4" />
+              <span>Add Daily Expenses</span>
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="flex items-center justify-between px-4 py-3 bg-muted/40 rounded-lg">
         <div className="text-sm text-muted-foreground">Total Monthly Spending</div>
