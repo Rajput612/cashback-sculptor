@@ -12,7 +12,11 @@ import {
   Home, 
   BookOpen, 
   Droplet,
-  Landmark
+  Landmark,
+  ShoppingBag,
+  Utensils,
+  Car,
+  Smartphone
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -33,15 +37,19 @@ interface SpendingItemProps {
   amount: number;
   category?: string;
   brand?: string;
+  app?: string;
   onNameChange: (value: string) => void;
   onAmountChange: (value: number) => void;
   onCategoryChange?: (value: string) => void;
   onBrandChange?: (value: string) => void;
+  onAppChange?: (value: string) => void;
   onRemove: () => void;
   showCategory?: boolean;
   showBrand?: boolean;
+  showApp?: boolean;
   categoryOptions?: string[];
   brandOptions?: string[];
+  appOptions?: string[];
 }
 
 const SpendingItem: React.FC<SpendingItemProps> = ({ 
@@ -49,15 +57,19 @@ const SpendingItem: React.FC<SpendingItemProps> = ({
   amount, 
   category,
   brand,
+  app,
   onNameChange, 
   onAmountChange,
   onCategoryChange,
-  onBrandChange, 
+  onBrandChange,
+  onAppChange,
   onRemove,
   showCategory = false,
   showBrand = false,
+  showApp = false,
   categoryOptions = [],
-  brandOptions = []
+  brandOptions = [],
+  appOptions = []
 }) => {
   return (
     <div className="flex flex-col gap-3 animate-scale-in">
@@ -106,6 +118,23 @@ const SpendingItem: React.FC<SpendingItemProps> = ({
         </div>
       )}
       
+      {showApp && onAppChange && (
+        <div className="flex items-center gap-3 pl-4">
+          <Select value={app} onValueChange={onAppChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select app/platform" />
+            </SelectTrigger>
+            <SelectContent>
+              {appOptions.map((a) => (
+                <SelectItem key={a} value={a}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       {showBrand && onBrandChange && (
         <div className="flex items-center gap-3 pl-8">
           <Select value={brand} onValueChange={onBrandChange}>
@@ -138,11 +167,27 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     'Rent', 'EMI Payments', 'Insurance', 'Investments', 'Subscriptions'
   ];
 
+  // Popular Indian apps by category
+  const appsByCategory: Record<string, string[]> = {
+    'Shopping': ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq', 'Nykaa', 'Meesho'],
+    'Groceries': ['BigBasket', 'Grofers', 'JioMart', 'Zepto', 'Dunzo', 'Swiggy Instamart', 'Blinkit'],
+    'Dining': ['Zomato', 'Swiggy', 'EatSure', 'EazyDiner', 'Dineout'],
+    'Travel': ['MakeMyTrip', 'Goibibo', 'Yatra', 'IRCTC', 'Cleartrip', 'Ola', 'Uber', 'Rapido'],
+    'Entertainment': ['BookMyShow', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana', 'Spotify'],
+    'Payments': ['Paytm', 'Google Pay', 'PhonePe', 'Amazon Pay', 'CRED', 'BHIM'],
+    'Electronics': ['Croma', 'Reliance Digital', 'Vijay Sales', 'Amazon'],
+    'Utilities': ['Paytm', 'PhonePe', 'Google Pay', 'BBPS', 'MobiKwik'],
+    'Education': ['BYJU\'S', 'Unacademy', 'Vedantu', 'upGrad', 'Coursera', 'Udemy'],
+    'Healthcare': ['Apollo 24|7', 'Practo', 'PharmEasy', '1mg', 'Netmeds', 'Tata 1mg'],
+    'Investments': ['Zerodha', 'Groww', 'Upstox', 'Paytm Money', 'ICICI Direct'],
+    'Subscriptions': ['Netflix', 'Amazon Prime', 'Hotstar', 'Spotify', 'YouTube Premium']
+  };
+
   // Popular Indian brands by category
   const brandsByCategory: Record<string, string[]> = {
     'Groceries': ['Big Basket', 'Grofers', 'DMart', 'Reliance Fresh', 'Nature\'s Basket'],
-    'Dining': ['Zomato', 'Swiggy', 'EazyDiner', 'Dineout'],
-    'Entertainment': ['BookMyShow', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana'],
+    'Dining': ['McDonald\'s', 'Domino\'s', 'KFC', 'Pizza Hut', 'Haldiram\'s', 'Burger King'],
+    'Entertainment': ['PVR', 'INOX', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana'],
     'Fuel': ['IOCL', 'BPCL', 'HPCL', 'Reliance Petroleum', 'Shell'],
     'Travel': ['MakeMyTrip', 'Goibibo', 'Yatra', 'IRCTC', 'Cleartrip', 'Ola', 'Uber'],
     'Shopping': ['Myntra', 'Flipkart', 'Amazon', 'Ajio', 'Nykaa', 'Tata Cliq'],
@@ -160,7 +205,8 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
       name: '', 
       amount: 0,
       category: subType === 'merchants' ? commonCategories[0] : undefined,
-      brand: undefined
+      brand: undefined,
+      app: undefined
     });
     setSpending(newSpending);
   };
@@ -190,6 +236,85 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(spending);
+  };
+
+  // Quick add functions for different spending categories
+  const addPopularApps = () => {
+    const newSpending = { ...spending };
+    
+    // Add common online apps
+    newSpending.online.merchants.push({ 
+      name: 'Amazon Shopping', 
+      amount: 5000, 
+      category: 'Shopping',
+      brand: 'Amazon',
+      app: 'Amazon'
+    });
+    
+    newSpending.online.merchants.push({ 
+      name: 'Swiggy Food', 
+      amount: 3000, 
+      category: 'Dining',
+      brand: undefined,
+      app: 'Swiggy'
+    });
+    
+    newSpending.online.merchants.push({ 
+      name: 'Zepto Groceries', 
+      amount: 2000, 
+      category: 'Groceries',
+      brand: undefined,
+      app: 'Zepto'
+    });
+    
+    newSpending.online.merchants.push({ 
+      name: 'Zomato Food', 
+      amount: 2500, 
+      category: 'Dining',
+      brand: undefined,
+      app: 'Zomato'
+    });
+    
+    setSpending(updateSpendingTotals(newSpending));
+  };
+
+  const addCommonExpenses = () => {
+    const newSpending = { ...spending };
+    
+    // Add rent
+    newSpending.offline.bills.push({ name: 'Rent', amount: 20000, category: 'Housing' });
+    
+    // Add common bills
+    newSpending.online.bills.push({ name: 'Electricity Bill', amount: 2000, category: 'Utilities' });
+    newSpending.online.bills.push({ name: 'Mobile Recharge', amount: 500, category: 'Utilities' });
+    newSpending.online.bills.push({ name: 'Internet Bill', amount: 1000, category: 'Utilities' });
+    
+    // Add common shopping
+    newSpending.online.merchants.push({ 
+      name: 'Amazon', 
+      amount: 5000, 
+      category: 'Shopping',
+      brand: 'Amazon',
+      app: 'Amazon'
+    });
+    
+    // Add groceries
+    newSpending.offline.merchants.push({ 
+      name: 'Grocery Store', 
+      amount: 8000, 
+      category: 'Groceries' 
+    });
+    
+    // Add dining
+    newSpending.online.merchants.push({ 
+      name: 'Zomato', 
+      amount: 3000, 
+      category: 'Dining',
+      brand: undefined,
+      app: 'Zomato'
+    });
+    
+    setSpending(updateSpendingTotals(newSpending));
   };
 
   return (
@@ -233,14 +358,18 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       amount={item.amount}
                       category={item.category}
                       brand={item.brand}
+                      app={item.app}
                       onNameChange={(value) => updateItem('online', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('online', 'merchants', index, 'amount', value)}
                       onCategoryChange={(value) => updateItem('online', 'merchants', index, 'category', value)}
                       onBrandChange={(value) => updateItem('online', 'merchants', index, 'brand', value)}
+                      onAppChange={(value) => updateItem('online', 'merchants', index, 'app', value)}
                       onRemove={() => removeItem('online', 'merchants', index)}
                       showCategory={true}
                       categoryOptions={commonCategories}
-                      showBrand={!!item.category}
+                      showApp={!!item.category && appsByCategory[item.category]?.length > 0}
+                      appOptions={item.category ? appsByCategory[item.category] || [] : []}
+                      showBrand={!!item.category && brandsByCategory[item.category]?.length > 0}
                       brandOptions={item.category ? brandsByCategory[item.category] || [] : []}
                     />
                   ))}
@@ -415,52 +544,28 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
         </Tabs>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 mb-4">
+      {/* Quick Add Buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <Button 
           type="button" 
           variant="secondary" 
           size="sm" 
-          onClick={() => {
-            // Add common expenses
-            const newSpending = { ...spending };
-            
-            // Add rent
-            newSpending.offline.bills.push({ name: 'Rent', amount: 20000, category: 'Housing' });
-            
-            // Add common bills
-            newSpending.online.bills.push({ name: 'Electricity Bill', amount: 2000, category: 'Utilities' });
-            newSpending.online.bills.push({ name: 'Mobile Recharge', amount: 500, category: 'Utilities' });
-            newSpending.online.bills.push({ name: 'Internet Bill', amount: 1000, category: 'Utilities' });
-            
-            // Add common shopping
-            newSpending.online.merchants.push({ 
-              name: 'Amazon', 
-              amount: 5000, 
-              category: 'Shopping',
-              brand: 'Amazon' 
-            });
-            
-            // Add groceries
-            newSpending.offline.merchants.push({ 
-              name: 'Grocery Store', 
-              amount: 8000, 
-              category: 'Groceries' 
-            });
-            
-            // Add dining
-            newSpending.online.merchants.push({ 
-              name: 'Zomato', 
-              amount: 3000, 
-              category: 'Dining',
-              brand: 'Zomato'
-            });
-            
-            setSpending(updateSpendingTotals(newSpending));
-          }}
+          onClick={addCommonExpenses}
           className="flex items-center gap-2"
         >
           <Home className="h-4 w-4" />
           <span>Add Common Expenses</span>
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={addPopularApps}
+          className="flex items-center gap-2"
+        >
+          <Smartphone className="h-4 w-4" />
+          <span>Add Popular Apps</span>
         </Button>
         
         <Button 
@@ -475,7 +580,8 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               name: 'BYJU\'S', 
               amount: 2000, 
               category: 'Education',
-              brand: 'BYJU\'S' 
+              brand: 'BYJU\'S',
+              app: 'BYJU\'S'
             });
             setSpending(updateSpendingTotals(newSpending));
           }}
@@ -517,6 +623,46 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
         >
           <Landmark className="h-4 w-4" />
           <span>Add EMI Payments</span>
+        </Button>
+        
+        <Button 
+          type="button" 
+          variant="secondary" 
+          size="sm" 
+          onClick={() => {
+            // Add daily expenses
+            const newSpending = { ...spending };
+            
+            // Shopping
+            newSpending.offline.merchants.push({ 
+              name: 'Department Store', 
+              amount: 3000, 
+              category: 'Shopping',
+              brand: undefined
+            });
+            
+            // Fuel
+            newSpending.offline.merchants.push({ 
+              name: 'Petrol Pump', 
+              amount: 4000, 
+              category: 'Fuel',
+              brand: 'HPCL'
+            });
+            
+            // Dining
+            newSpending.offline.merchants.push({ 
+              name: 'Restaurants', 
+              amount: 2500, 
+              category: 'Dining',
+              brand: undefined
+            });
+            
+            setSpending(updateSpendingTotals(newSpending));
+          }}
+          className="flex items-center gap-2"
+        >
+          <Car className="h-4 w-4" />
+          <span>Add Daily Expenses</span>
         </Button>
       </div>
 

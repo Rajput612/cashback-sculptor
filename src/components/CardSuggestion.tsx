@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CreditCard as CreditCardIcon, IndianRupee, CreditCard, Award, Info, Gift, Zap, Plane } from 'lucide-react';
+import { CreditCard as CreditCardIcon, IndianRupee, CreditCard, Award, Info, Gift, Zap, Plane, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard as CardType, Spending, calculateCashback } from '@/lib/calculations';
 import { Separator } from '@/components/ui/separator';
@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 
 interface CardSuggestionProps {
   card: CardType;
-  spending: Spending;
+  spending?: Spending;
   className?: string;
   onSelect?: () => void;
   isSelected?: boolean;
+  isPromotion?: boolean;
 }
 
 const CardSuggestion: React.FC<CardSuggestionProps> = ({ 
@@ -20,22 +21,32 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
   spending, 
   className,
   onSelect,
-  isSelected = false
+  isSelected = false,
+  isPromotion = false
 }) => {
-  const cashback = calculateCashback(card, spending);
-  const netValue = cashback - card.annualFee;
+  const cashback = spending ? calculateCashback(card, spending) : 0;
+  const netValue = spending ? cashback - card.annualFee : 0;
   
   return (
     <div 
       className={cn(
         "relative overflow-hidden rounded-xl p-6 shadow-soft card-hover bg-card transition-all",
         isSelected && "ring-2 ring-primary",
+        isPromotion && "border border-amber-300/30 bg-amber-50/10",
         className
       )}
     >
       {isSelected && (
         <div className="absolute top-2 right-2">
           <Badge className="bg-primary">Selected</Badge>
+        </div>
+      )}
+      
+      {isPromotion && (
+        <div className="absolute top-2 right-2">
+          <Badge className="bg-amber-500/90 hover:bg-amber-500/80">
+            <Star className="h-3 w-3 mr-1 fill-current" /> Featured
+          </Badge>
         </div>
       )}
       
@@ -64,15 +75,28 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
         </div>
         
         <div className="md:w-2/3 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-secondary/50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <IndianRupee className="h-4 w-4" />
-                <span>Annual Cashback</span>
+          {spending ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  <IndianRupee className="h-4 w-4" />
+                  <span>Annual Cashback</span>
+                </div>
+                <div className="text-2xl font-bold text-primary">₹{(cashback * 12).toFixed(0)}</div>
+                <div className="text-xs text-muted-foreground">₹{cashback.toFixed(0)} monthly</div>
               </div>
-              <div className="text-2xl font-bold text-primary">₹{(cashback * 12).toFixed(0)}</div>
-              <div className="text-xs text-muted-foreground">₹{cashback.toFixed(0)} monthly</div>
+              <div className="p-4 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                  <CreditCardIcon className="h-4 w-4" />
+                  <span>Annual Fee</span>
+                </div>
+                <div className="text-2xl font-bold">₹{card.annualFee}</div>
+                {card.feeWaiver && (
+                  <div className="text-xs text-muted-foreground">{card.feeWaiver}</div>
+                )}
+              </div>
             </div>
+          ) : (
             <div className="p-4 bg-secondary/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                 <CreditCardIcon className="h-4 w-4" />
@@ -83,15 +107,17 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
                 <div className="text-xs text-muted-foreground">{card.feeWaiver}</div>
               )}
             </div>
-          </div>
+          )}
           
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <div className="flex items-center gap-2 text-sm font-medium mb-1">
-              <Award className="h-4 w-4 text-primary" />
-              <span>Net Annual Value</span>
+          {spending && (
+            <div className="p-4 bg-primary/5 rounded-lg">
+              <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                <Award className="h-4 w-4 text-primary" />
+                <span>Net Annual Value</span>
+              </div>
+              <div className="text-3xl font-bold text-primary">₹{(netValue * 12).toFixed(0)}</div>
             </div>
-            <div className="text-3xl font-bold text-primary">₹{(netValue * 12).toFixed(0)}</div>
-          </div>
+          )}
           
           <Separator />
           
@@ -162,15 +188,17 @@ const CardSuggestion: React.FC<CardSuggestionProps> = ({
             </div>
           </div>
           
-          <div className="pt-4">
-            <Button 
-              variant={isSelected ? "outline" : "default"} 
-              onClick={onSelect} 
-              className="w-full"
-            >
-              {isSelected ? "Remove from Comparison" : "Add to Comparison"}
-            </Button>
-          </div>
+          {onSelect && (
+            <div className="pt-4">
+              <Button 
+                variant={isSelected ? "outline" : "default"} 
+                onClick={onSelect} 
+                className="w-full"
+              >
+                {isSelected ? "Remove from Comparison" : "Add to Comparison"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

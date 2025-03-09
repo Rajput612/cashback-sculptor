@@ -13,7 +13,7 @@ import {
   initializeEmptySpending
 } from '@/lib/calculations';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, TrendingUp } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -23,6 +23,11 @@ const Index = () => {
   const [recommendedCards, setRecommendedCards] = useState<CreditCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<CreditCard[]>([]);
   const [showIntro, setShowIntro] = useState(true);
+
+  // Featured cards for promotion (show regardless of spending)
+  const featuredCards = creditCards.filter(card => 
+    ["hdfc-infinia", "sbi-elite", "icici-amazon", "axis-flipkart"].includes(card.id)
+  );
 
   const handleSpendingSubmit = (spendingData: Spending) => {
     setSpending(spendingData);
@@ -92,10 +97,43 @@ const Index = () => {
           </p>
           <div className="flex justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <a 
-              href="#spending-form" 
+              href="#featured-cards" 
               className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
             >
-              <span>Get Started</span>
+              <span>Featured Cards</span>
+              <ChevronDown className="h-4 w-4" />
+            </a>
+          </div>
+        </section>
+        
+        {/* Featured Cards Section */}
+        <section id="featured-cards" className="py-12">
+          <div className="mb-10 text-center">
+            <Badge className="mb-2 px-3 py-1 bg-amber-500/20 text-amber-700 border-amber-200">
+              <TrendingUp className="h-3 w-3 mr-1" /> Featured
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">Top Credit Cards</h2>
+            <p className="text-muted-foreground">
+              Explore these popular credit cards with great rewards and benefits
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-8 mb-12">
+            {featuredCards.map((card) => (
+              <CardSuggestion
+                key={`featured-${card.id}`}
+                card={card}
+                isPromotion={true}
+              />
+            ))}
+          </div>
+          
+          <div className="text-center mb-8">
+            <a 
+              href="#spending-form" 
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+            >
+              <span>Find Your Perfect Card Match</span>
               <ChevronDown className="h-4 w-4" />
             </a>
           </div>
@@ -131,7 +169,7 @@ const Index = () => {
               </Badge>
               <h2 className="text-3xl font-bold mb-4 animate-slide-down">Your Recommended Cards</h2>
               <p className="text-muted-foreground animate-slide-down" style={{ animationDelay: '0.1s' }}>
-                Based on your ${spending.total.toLocaleString()} monthly spending, these cards will give you the most value.
+                Based on your ₹{spending.total.toLocaleString()} monthly spending, these cards will give you the most value.
               </p>
             </div>
             
