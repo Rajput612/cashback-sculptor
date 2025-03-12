@@ -1,9 +1,9 @@
-
 export interface SpendingItem {
   name: string;
   amount: number;
   category?: string;
   brand?: string;
+  app?: string;
 }
 
 export interface Spending {
@@ -349,11 +349,11 @@ const categoryMapping: Record<string, string[]> = {
 };
 
 // Function to match user spending category to credit card category
-export function matchCategory(userCategory: string): string {
-  userCategory = userCategory.toLowerCase();
+export function matchCategory(userCategory: string, subcategories?: { level: string; value: string; }[]): string {
+  const fullPath = [userCategory, ...(subcategories?.map(sc => sc.value) || [])].join('/').toLowerCase();
   
   for (const [cardCategory, keywords] of Object.entries(categoryMapping)) {
-    if (keywords.some(keyword => userCategory.includes(keyword))) {
+    if (keywords.some(keyword => fullPath.includes(keyword))) {
       return cardCategory;
     }
   }
@@ -365,12 +365,10 @@ export function matchCategory(userCategory: string): string {
 export function calculateCashback(card: CreditCard, spending: Spending): number {
   let totalCashback = 0;
   
-  // Process all spending categories
   const processSpendingItem = (item: SpendingItem) => {
-    // If there's a category assigned to this spending item, use it
     const spendingCategory = item.category ? 
-                            matchCategory(item.category) : 
-                            matchCategory(item.name);
+      matchCategory(item.category, item.subcategories) : 
+      matchCategory(item.name, item.subcategories);
     
     // If this is a merchant with a brand and it matches a co-branded card
     if (item.brand && card.isCoBranded && card.coPartner) {
