@@ -49,28 +49,10 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   const renderDetailsContent = () => {
     if (isOnline) {
       return (
-        <div className="space-y-3 pl-4 pt-1 animate-slide-down">
-          {onAppChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">App/Website:</p>
-              <Select value={item.app} onValueChange={onAppChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select app/website" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.apps.map((app) => (
-                    <SelectItem key={app} value={app}>
-                      {app}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
+        <div className="space-y-3 pl-2 md:pl-4 pt-1 animate-slide-down">
           {item.app && options.subApps[item.app]?.length > 0 && onSubAppChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Sub App:</p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+              <p className="text-sm text-muted-foreground w-full md:w-24">Sub App:</p>
               <Select value={item.subApp} onValueChange={onSubAppChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select sub app" />
@@ -87,8 +69,8 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
           )}
           
           {onCategoryChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Category:</p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+              <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
               <Select value={item.category} onValueChange={onCategoryChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select category" />
@@ -108,8 +90,8 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
           )}
           
           {item.category && options.brands[item.category]?.length > 0 && onBrandChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Brand:</p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+              <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
               <Select value={item.brand} onValueChange={onBrandChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select brand" />
@@ -129,28 +111,10 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
     } else {
       // Offline spending
       return (
-        <div className="space-y-3 pl-4 pt-1 animate-slide-down">
-          {onMerchantChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Merchant:</p>
-              <Select value={item.merchant} onValueChange={onMerchantChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select merchant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.merchants.map((merchant) => (
-                    <SelectItem key={merchant} value={merchant}>
-                      {merchant}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
+        <div className="space-y-3 pl-2 md:pl-4 pt-1 animate-slide-down">
           {onCategoryChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Category:</p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+              <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
               <Select value={item.category} onValueChange={onCategoryChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select category" />
@@ -167,8 +131,8 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
           )}
           
           {item.category && options.brands[item.category]?.length > 0 && onBrandChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Brand:</p>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+              <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
               <Select value={item.brand} onValueChange={onBrandChange}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select brand" />
@@ -190,10 +154,16 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
 
   return (
     <div className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
         {isOnline ? (
-          <Select value={item.name} onValueChange={onNameChange}>
-            <SelectTrigger className="flex-1">
+          <Select value={item.name} onValueChange={(value) => {
+            onNameChange(value);
+            // Also set the app value to be the same if it exists
+            if (onAppChange) {
+              onAppChange(value);
+            }
+          }}>
+            <SelectTrigger className="flex-1 w-full">
               <SelectValue placeholder={`Select App/Website (e.g. Amazon, Netflix)`} />
             </SelectTrigger>
             <SelectContent>
@@ -206,8 +176,14 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
             </SelectContent>
           </Select>
         ) : (
-          <Select value={item.name} onValueChange={onNameChange}>
-            <SelectTrigger className="flex-1">
+          <Select value={item.name} onValueChange={(value) => {
+            onNameChange(value);
+            // Also set the merchant value to be the same if it exists
+            if (onMerchantChange) {
+              onMerchantChange(value);
+            }
+          }}>
+            <SelectTrigger className="flex-1 w-full">
               <SelectValue placeholder={`Select Store/Shop (e.g. Local Store, Restaurant)`} />
             </SelectTrigger>
             <SelectContent>
@@ -221,35 +197,37 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
           </Select>
         )}
         
-        <div className="relative">
-          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            type="number"
-            value={item.amount === 0 ? '' : item.amount}
-            onChange={(e) => onAmountChange(Number(e.target.value))}
-            placeholder="Amount"
-            className="pl-8 w-32"
-          />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-initial">
+            <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              type="number"
+              value={item.amount === 0 ? '' : item.amount}
+              onChange={(e) => onAmountChange(Number(e.target.value))}
+              placeholder="Amount"
+              className="pl-8 w-full md:w-32"
+            />
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+            className="px-2"
+          >
+            {showDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onRemove}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <MinusCircle className="h-5 w-5" />
+            <span className="sr-only">Remove</span>
+          </Button>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={() => setShowDetails(!showDetails)}
-          className="px-2"
-        >
-          {showDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onRemove}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <MinusCircle className="h-5 w-5" />
-          <span className="sr-only">Remove</span>
-        </Button>
       </div>
       
       {showDetails && renderDetailsContent()}
