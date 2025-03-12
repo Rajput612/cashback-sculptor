@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MinusCircle, IndianRupee, ChevronDown, ChevronRight } from 'lucide-react';
+import { MinusCircle, IndianRupee, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SpendingItem as SpendingItemType } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 interface SpendingFormItemProps {
   item: SpendingItemType;
@@ -43,67 +44,190 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   options
 }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    item.category ? [item.category] : []
+  );
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(
+    item.brand ? [item.brand] : []
+  );
+  const [selectedSubApps, setSelectedSubApps] = useState<string[]>(
+    item.subApp ? [item.subApp] : []
+  );
 
   const isOnline = type === 'online';
+  
+  const handleCategorySelect = (category: string) => {
+    if (onCategoryChange) {
+      if (category) {
+        setSelectedCategories([...selectedCategories, category]);
+        onCategoryChange(category);
+      }
+    }
+  };
+  
+  const handleBrandSelect = (brand: string) => {
+    if (onBrandChange) {
+      if (brand) {
+        setSelectedBrands([...selectedBrands, brand]);
+        onBrandChange(brand);
+      }
+    }
+  };
+  
+  const handleSubAppSelect = (subApp: string) => {
+    if (onSubAppChange) {
+      if (subApp) {
+        setSelectedSubApps([...selectedSubApps, subApp]);
+        onSubAppChange(subApp);
+      }
+    }
+  };
+  
+  const removeCategory = (category: string) => {
+    setSelectedCategories(selectedCategories.filter(c => c !== category));
+  };
+  
+  const removeBrand = (brand: string) => {
+    setSelectedBrands(selectedBrands.filter(b => b !== brand));
+  };
+  
+  const removeSubApp = (subApp: string) => {
+    setSelectedSubApps(selectedSubApps.filter(s => s !== subApp));
+  };
   
   const renderDetailsContent = () => {
     if (isOnline) {
       return (
         <div className="space-y-3 pl-2 md:pl-4 pt-1 animate-slide-down">
+          {/* Sub Apps Selection */}
           {item.app && options.subApps[item.app]?.length > 0 && onSubAppChange && (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <p className="text-sm text-muted-foreground w-full md:w-24">Sub App:</p>
-              <Select value={item.subApp} onValueChange={onSubAppChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select sub app" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.subApps[item.app].map((subApp) => (
-                    <SelectItem key={subApp} value={subApp}>
-                      {subApp}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <p className="text-sm text-muted-foreground w-full md:w-24">Sub App:</p>
+                <div className="flex-1 flex flex-col">
+                  <Select onValueChange={handleSubAppSelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select sub app" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.subApps[item.app].map((subApp) => (
+                        <SelectItem key={subApp} value={subApp}>
+                          {subApp}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Display selected sub apps as badges */}
+                  {selectedSubApps.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedSubApps.map(subApp => (
+                        <Badge key={subApp} variant="secondary" className="flex items-center gap-1">
+                          {subApp}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => removeSubApp(subApp)}
+                          >
+                            <MinusCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           
+          {/* Categories Selection */}
           {onCategoryChange && (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
-              <Select value={item.category} onValueChange={onCategoryChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(item.app ? 
-                    options.categories[item.app] || [] : 
-                    Object.values(options.categories).flat()
-                  ).map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
+                <div className="flex-1 flex flex-col">
+                  <Select onValueChange={handleCategorySelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(item.app ? 
+                        options.categories[item.app] || [] : 
+                        Object.values(options.categories).flat()
+                      ).map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Display selected categories as badges */}
+                  {selectedCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedCategories.map(category => (
+                        <Badge key={category} variant="secondary" className="flex items-center gap-1">
+                          {category}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => removeCategory(category)}
+                          >
+                            <MinusCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           
-          {item.category && options.brands[item.category]?.length > 0 && onBrandChange && (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
-              <Select value={item.brand} onValueChange={onBrandChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.brands[item.category].map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Brands Selection */}
+          {selectedCategories.length > 0 && onBrandChange && (
+            <div className="space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
+                <div className="flex-1 flex flex-col">
+                  <Select onValueChange={handleBrandSelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCategories
+                        .flatMap(category => options.brands[category] || [])
+                        .filter((brand, index, self) => self.indexOf(brand) === index) // Remove duplicates
+                        .map((brand) => (
+                          <SelectItem key={brand} value={brand}>
+                            {brand}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Display selected brands as badges */}
+                  {selectedBrands.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedBrands.map(brand => (
+                        <Badge key={brand} variant="secondary" className="flex items-center gap-1">
+                          {brand}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => removeBrand(brand)}
+                          >
+                            <MinusCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -112,39 +236,90 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
       // Offline spending
       return (
         <div className="space-y-3 pl-2 md:pl-4 pt-1 animate-slide-down">
+          {/* Categories Selection */}
           {onCategoryChange && (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
-              <Select value={item.category} onValueChange={onCategoryChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(options.categories).flat().map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <p className="text-sm text-muted-foreground w-full md:w-24">Category:</p>
+                <div className="flex-1 flex flex-col">
+                  <Select onValueChange={handleCategorySelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(options.categories).flat().map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Display selected categories as badges */}
+                  {selectedCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedCategories.map(category => (
+                        <Badge key={category} variant="secondary" className="flex items-center gap-1">
+                          {category}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => removeCategory(category)}
+                          >
+                            <MinusCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           
-          {item.category && options.brands[item.category]?.length > 0 && onBrandChange && (
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
-              <Select value={item.brand} onValueChange={onBrandChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.brands[item.category].map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Brands Selection */}
+          {selectedCategories.length > 0 && onBrandChange && (
+            <div className="space-y-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                <p className="text-sm text-muted-foreground w-full md:w-24">Brand:</p>
+                <div className="flex-1 flex flex-col">
+                  <Select onValueChange={handleBrandSelect}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedCategories
+                        .flatMap(category => options.brands[category] || [])
+                        .filter((brand, index, self) => self.indexOf(brand) === index) // Remove duplicates
+                        .map((brand) => (
+                          <SelectItem key={brand} value={brand}>
+                            {brand}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Display selected brands as badges */}
+                  {selectedBrands.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedBrands.map(brand => (
+                        <Badge key={brand} variant="secondary" className="flex items-center gap-1">
+                          {brand}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={() => removeBrand(brand)}
+                          >
+                            <MinusCircle className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

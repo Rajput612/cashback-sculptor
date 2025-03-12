@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -263,11 +262,13 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="online" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
-              <span>Online Spending</span>
+              <span className="hidden sm:inline">Online Spending</span>
+              <span className="sm:hidden">Online</span>
             </TabsTrigger>
             <TabsTrigger value="offline" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              <span>Offline Spending</span>
+              <span className="hidden sm:inline">Offline Spending</span>
+              <span className="sm:hidden">Offline</span>
             </TabsTrigger>
           </TabsList>
 
@@ -279,9 +280,18 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               className="w-full"
             >
               <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="merchants">Apps/Websites</TabsTrigger>
-                <TabsTrigger value="categories">Categories</TabsTrigger>
-                <TabsTrigger value="bills">Bills & Payments</TabsTrigger>
+                <TabsTrigger value="merchants" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Apps/Websites</span>
+                  <span className="sm:hidden">Apps</span>
+                </TabsTrigger>
+                <TabsTrigger value="categories" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Categories</span>
+                  <span className="sm:hidden">Cats</span>
+                </TabsTrigger>
+                <TabsTrigger value="bills" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Bills & Payments</span>
+                  <span className="sm:hidden">Bills</span>
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
@@ -422,9 +432,18 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               className="w-full"
             >
               <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="merchants">Stores/Shops</TabsTrigger>
-                <TabsTrigger value="categories">Categories</TabsTrigger>
-                <TabsTrigger value="bills">Bills & Payments</TabsTrigger>
+                <TabsTrigger value="merchants" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Stores/Shops</span>
+                  <span className="sm:hidden">Stores</span>
+                </TabsTrigger>
+                <TabsTrigger value="categories" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Categories</span>
+                  <span className="sm:hidden">Cats</span>
+                </TabsTrigger>
+                <TabsTrigger value="bills" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Bills & Payments</span>
+                  <span className="sm:hidden">Bills</span>
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="merchants" className="mt-4 space-y-4">
