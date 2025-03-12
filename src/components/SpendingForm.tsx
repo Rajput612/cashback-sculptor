@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
   PlusCircle, 
-  MinusCircle, 
+  MinusCircle,
   IndianRupee, 
   ShoppingCart, 
   CreditCard, 
@@ -29,30 +30,11 @@ import { SpendingItem as SpendingItemType } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import SpendingFormItem from './SpendingFormItem';
 
 interface SpendingFormProps {
   className?: string;
   onSubmit: (spending: Spending) => void;
-}
-
-interface SpendingItemProps {
-  name: string;
-  amount: number;
-  category?: string;
-  brand?: string;
-  app?: string;
-  onNameChange: (value: string) => void;
-  onAmountChange: (value: number) => void;
-  onCategoryChange?: (value: string) => void;
-  onBrandChange?: (value: string) => void;
-  onAppChange?: (value: string) => void;
-  onRemove: () => void;
-  showCategory?: boolean;
-  showBrand?: boolean;
-  showApp?: boolean;
-  categoryOptions?: string[];
-  brandOptions?: string[];
-  appOptions?: string[];
 }
 
 // Helper function to initialize empty spending
@@ -61,139 +43,17 @@ const initializeEmptySpending = (): Spending => {
     online: {
       merchants: [],
       categories: [],
-      bills: []
+      bills: [],
+      total: 0
     },
     offline: {
       merchants: [],
       categories: [],
-      bills: []
+      bills: [],
+      total: 0
     },
     total: 0
   };
-};
-
-const SpendingItem: React.FC<SpendingItemProps> = ({ 
-  name, 
-  amount, 
-  category,
-  brand,
-  app,
-  onNameChange, 
-  onAmountChange,
-  onCategoryChange,
-  onBrandChange,
-  onAppChange,
-  onRemove,
-  showCategory = false,
-  showBrand = false,
-  showApp = false,
-  categoryOptions = [],
-  brandOptions = [],
-  appOptions = []
-}) => {
-  const [showDetails, setShowDetails] = useState(false);
-  
-  return (
-    <div className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
-      <div className="flex items-center gap-3">
-        <Input
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Name (e.g. Amazon, Rent)"
-          className="flex-1"
-        />
-        <div className="relative">
-          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            type="number"
-            value={amount === 0 ? '' : amount}
-            onChange={(e) => onAmountChange(Number(e.target.value))}
-            placeholder="Amount"
-            className="pl-8 w-32"
-          />
-        </div>
-        
-        {(showCategory || showApp || showBrand) && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setShowDetails(!showDetails)}
-            className="px-2"
-          >
-            {showDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-        )}
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onRemove}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <MinusCircle className="h-5 w-5" />
-          <span className="sr-only">Remove</span>
-        </Button>
-      </div>
-      
-      {showDetails && (
-        <div className="space-y-3 pl-4 pt-1 animate-slide-down">
-          {showCategory && onCategoryChange && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Category:</p>
-              <Select value={category} onValueChange={onCategoryChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          {showApp && onAppChange && category && appOptions.length > 0 && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">App/Platform:</p>
-              <Select value={app} onValueChange={onAppChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select app/platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {appOptions.map((a) => (
-                    <SelectItem key={a} value={a}>
-                      {a}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          {showBrand && onBrandChange && category && brandOptions.length > 0 && (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground w-24">Brand:</p>
-              <Select value={brand} onValueChange={onBrandChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brandOptions.map((b) => (
-                    <SelectItem key={b} value={b}>
-                      {b}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 };
 
 const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
@@ -208,46 +68,72 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     'Rent', 'EMI Payments', 'Insurance', 'Investments', 'Subscriptions'
   ];
 
-  // Popular Indian apps by category
-  const appsByCategory: Record<string, string[]> = {
-    'Shopping': ['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'Tata Cliq', 'Nykaa', 'Meesho'],
-    'Groceries': ['BigBasket', 'Grofers', 'JioMart', 'Zepto', 'Dunzo', 'Swiggy Instamart', 'Blinkit'],
-    'Dining': ['Zomato', 'Swiggy', 'EatSure', 'EazyDiner', 'Dineout'],
-    'Travel': ['MakeMyTrip', 'Goibibo', 'Yatra', 'IRCTC', 'Cleartrip', 'Ola', 'Uber', 'Rapido'],
-    'Entertainment': ['BookMyShow', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana', 'Spotify'],
-    'Payments': ['Paytm', 'Google Pay', 'PhonePe', 'Amazon Pay', 'CRED', 'BHIM'],
-    'Electronics': ['Croma', 'Reliance Digital', 'Vijay Sales', 'Amazon'],
-    'Utilities': ['Paytm', 'PhonePe', 'Google Pay', 'BBPS', 'MobiKwik'],
-    'Education': ['BYJU\'S', 'Unacademy', 'Vedantu', 'upGrad', 'Coursera', 'Udemy'],
-    'Healthcare': ['Apollo 24|7', 'Practo', 'PharmEasy', '1mg', 'Netmeds', 'Tata 1mg'],
-    'Investments': ['Zerodha', 'Groww', 'Upstox', 'Paytm Money', 'ICICI Direct'],
-    'Subscriptions': ['Netflix', 'Amazon Prime', 'Hotstar', 'Spotify', 'YouTube Premium']
+  // Popular Indian apps 
+  const popularApps = [
+    'Amazon', 'Flipkart', 'Myntra', 'Swiggy', 'Zomato', 'BigBasket',
+    'Grofers', 'Paytm', 'PhonePe', 'Google Pay', 'BookMyShow',
+    'MakeMyTrip', 'Goibibo', 'Ola', 'Uber', 'Netflix', 'Hotstar',
+    'BYJU\'S', 'Unacademy', 'PharmEasy', '1mg', 'Zerodha'
+  ];
+
+  // Popular merchants for offline
+  const popularMerchants = [
+    'Local Grocery Store', 'Supermarket', 'Restaurant', 'Petrol Pump', 
+    'Movie Theater', 'Shopping Mall', 'Salon', 'Hospital', 'Pharmacy',
+    'School/College', 'Gym', 'Clothing Store', 'Electronics Store'
+  ];
+
+  // Sub apps for master payment apps
+  const subApps: Record<string, string[]> = {
+    'Paytm': ['Paytm Mall', 'Paytm Movies', 'Bill Payments', 'Travel', 'Games', 'Food'],
+    'PhonePe': ['Bill Payments', 'Travel', 'Food', 'Groceries', 'Entertainment'],
+    'Google Pay': ['Bill Payments', 'Restaurants', 'Online Shopping'],
+    'Amazon': ['Amazon Fresh', 'Amazon Prime', 'Amazon Fashion', 'Amazon Devices', 'Grocery', 'Electronics']
+  };
+
+  // Categories by app
+  const categoriesByApp: Record<string, string[]> = {
+    'Amazon': ['Electronics', 'Clothing', 'Books', 'Home', 'Grocery', 'Beauty', 'Toys'],
+    'Flipkart': ['Electronics', 'Clothing', 'Home Appliances', 'Furniture', 'Beauty', 'Books'],
+    'Myntra': ['Clothing', 'Footwear', 'Accessories', 'Beauty', 'Home'],
+    'Swiggy': ['Food Delivery', 'Groceries', 'Meat', 'Medicine'],
+    'Zomato': ['Food Delivery', 'Dining Out', 'Groceries'],
+    'BigBasket': ['Groceries', 'Fresh Produce', 'Household'],
+    'Paytm': ['Entertainment', 'Travel', 'Utilities', 'Financial Services'],
+    'PhonePe': ['Utilities', 'Travel', 'Entertainment', 'Insurance'],
+    'MakeMyTrip': ['Flights', 'Hotels', 'Holidays', 'Bus', 'Cabs'],
+    'Ola': ['Ride', 'Food Delivery', 'Financial Services'],
+    'Uber': ['Ride', 'Food Delivery', 'Rental']
   };
 
   // Popular Indian brands by category
   const brandsByCategory: Record<string, string[]> = {
-    'Groceries': ['Big Basket', 'Grofers', 'DMart', 'Reliance Fresh', 'Nature\'s Basket'],
-    'Dining': ['McDonald\'s', 'Domino\'s', 'KFC', 'Pizza Hut', 'Haldiram\'s', 'Burger King'],
+    'Electronics': ['Samsung', 'Apple', 'Mi', 'OnePlus', 'Boat', 'LG', 'Sony', 'Philips', 'HP', 'Dell'],
+    'Clothing': ['Myntra', 'H&M', 'Zara', 'Allen Solly', 'Van Heusen', 'Peter England', 'Louis Philippe'],
+    'Footwear': ['Nike', 'Adidas', 'Puma', 'Sparx', 'Bata', 'Woodland', 'Red Tape'],
+    'Groceries': ['Tata', 'Reliance', 'ITC', 'Amul', 'Patanjali', 'Nestle', 'Britannia'],
     'Entertainment': ['PVR', 'INOX', 'Netflix', 'Amazon Prime', 'Hotstar', 'JioSaavn', 'Gaana'],
     'Fuel': ['IOCL', 'BPCL', 'HPCL', 'Reliance Petroleum', 'Shell'],
     'Travel': ['MakeMyTrip', 'Goibibo', 'Yatra', 'IRCTC', 'Cleartrip', 'Ola', 'Uber'],
     'Shopping': ['Myntra', 'Flipkart', 'Amazon', 'Ajio', 'Nykaa', 'Tata Cliq'],
-    'Electronics': ['Croma', 'Reliance Digital', 'Vijay Sales', 'Amazon'],
-    'Utilities': ['Electricity Board', 'Water Board', 'Gas Connection', 'Mobile Recharge', 'Broadband'],
-    'Education': ['BYJU\'S', 'Unacademy', 'Vedantu', 'upGrad', 'School/College Fees'],
+    'Dining': ['McDonald\'s', 'Domino\'s', 'KFC', 'Pizza Hut', 'Haldiram\'s', 'Burger King'],
     'Healthcare': ['Apollo', 'Practo', 'PharmEasy', '1mg', 'Netmeds'],
-    'Investments': ['Zerodha', 'Groww', 'Upstox', 'Paytm Money', 'ICICI Direct'],
-    'Subscriptions': ['Netflix', 'Amazon Prime', 'Hotstar', 'Spotify', 'YouTube Premium']
+    'Education': ['BYJU\'S', 'Unacademy', 'Vedantu', 'upGrad', 'Coursera', 'Udemy']
+  };
+
+  const options = {
+    apps: popularApps,
+    subApps: subApps,
+    categories: categoriesByApp,
+    brands: brandsByCategory,
+    merchants: popularMerchants
   };
 
   const addItem = (type: 'online' | 'offline', subType: 'merchants' | 'categories' | 'bills') => {
     const newSpending = { ...spending };
     newSpending[type][subType].push({ 
       name: '', 
-      amount: 0,
-      category: subType === 'merchants' ? commonCategories[0] : undefined,
-      brand: undefined,
-      app: undefined
+      amount: 0
     });
     setSpending(newSpending);
   };
@@ -261,7 +147,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
   ) => {
     const newSpending = { ...spending };
     
-    // Type assertion to any because SpendingItem has been updated in types.ts
+    // Type assertion to any because we're dynamically setting fields
     (newSpending[type][subType][index] as any)[field] = value;
     
     setSpending(updateSpendingTotals(newSpending));
@@ -305,7 +191,6 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
       name: 'Swiggy Food', 
       amount: 3000, 
       category: 'Dining',
-      brand: undefined,
       app: 'Swiggy'
     });
     
@@ -313,15 +198,13 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
       name: 'Zepto Groceries', 
       amount: 2000, 
       category: 'Groceries',
-      brand: undefined,
-      app: 'Zepto'
+      app: 'BigBasket'
     });
     
     newSpending.online.merchants.push({ 
       name: 'Zomato Food', 
       amount: 2500, 
       category: 'Dining',
-      brand: undefined,
       app: 'Zomato'
     });
     
@@ -353,7 +236,8 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     newSpending.offline.merchants.push({ 
       name: 'Grocery Store', 
       amount: 8000, 
-      category: 'Groceries' 
+      category: 'Groceries',
+      merchant: 'Local Grocery Store'
     });
     
     // Add dining
@@ -361,7 +245,6 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
       name: 'Zomato', 
       amount: 3000, 
       category: 'Dining',
-      brand: undefined,
       app: 'Zomato'
     });
     
@@ -404,25 +287,19 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="merchants" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.online.merchants.map((item, index) => (
-                    <SpendingItem
+                    <SpendingFormItem
                       key={`online-merchant-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      category={item.category}
-                      brand={item.brand}
-                      app={(item as any).app}
+                      item={item}
+                      type="online"
+                      index={index}
+                      options={options}
                       onNameChange={(value) => updateItem('online', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('online', 'merchants', index, 'amount', value)}
+                      onAppChange={(value) => updateItem('online', 'merchants', index, 'app', value)}
+                      onSubAppChange={(value) => updateItem('online', 'merchants', index, 'subApp', value)}
                       onCategoryChange={(value) => updateItem('online', 'merchants', index, 'category', value)}
                       onBrandChange={(value) => updateItem('online', 'merchants', index, 'brand', value)}
-                      onAppChange={(value) => updateItem('online', 'merchants', index, 'app', value)}
                       onRemove={() => removeItem('online', 'merchants', index)}
-                      showCategory={true}
-                      categoryOptions={commonCategories}
-                      showApp={!!item.category && appsByCategory[item.category]?.length > 0}
-                      appOptions={item.category ? appsByCategory[item.category] || [] : []}
-                      showBrand={!!item.category && brandsByCategory[item.category]?.length > 0}
-                      brandOptions={item.category ? brandsByCategory[item.category] || [] : []}
                     />
                   ))}
                 </div>
@@ -442,14 +319,36 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="categories" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.online.categories.map((item, index) => (
-                    <SpendingItem
-                      key={`online-category-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      onNameChange={(value) => updateItem('online', 'categories', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('online', 'categories', index, 'amount', value)}
-                      onRemove={() => removeItem('online', 'categories', index)}
-                    />
+                    <div key={`online-category-${index}`} className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={item.name}
+                          onChange={(e) => updateItem('online', 'categories', index, 'name', e.target.value)}
+                          placeholder="Category name"
+                          className="flex-1"
+                        />
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            type="number"
+                            value={item.amount === 0 ? '' : item.amount}
+                            onChange={(e) => updateItem('online', 'categories', index, 'amount', Number(e.target.value))}
+                            placeholder="Amount"
+                            className="pl-8 w-32"
+                          />
+                        </div>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeItem('online', 'categories', index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <MinusCircle className="h-5 w-5" />
+                          <span className="sr-only">Remove</span>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 
@@ -468,14 +367,36 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="bills" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.online.bills.map((item, index) => (
-                    <SpendingItem
-                      key={`online-bill-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      onNameChange={(value) => updateItem('online', 'bills', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('online', 'bills', index, 'amount', value)}
-                      onRemove={() => removeItem('online', 'bills', index)}
-                    />
+                    <div key={`online-bill-${index}`} className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={item.name}
+                          onChange={(e) => updateItem('online', 'bills', index, 'name', e.target.value)}
+                          placeholder="Bill name"
+                          className="flex-1"
+                        />
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            type="number"
+                            value={item.amount === 0 ? '' : item.amount}
+                            onChange={(e) => updateItem('online', 'bills', index, 'amount', Number(e.target.value))}
+                            placeholder="Amount"
+                            className="pl-8 w-32"
+                          />
+                        </div>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeItem('online', 'bills', index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <MinusCircle className="h-5 w-5" />
+                          <span className="sr-only">Remove</span>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 
@@ -509,21 +430,18 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="merchants" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.offline.merchants.map((item, index) => (
-                    <SpendingItem
+                    <SpendingFormItem
                       key={`offline-merchant-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      category={item.category}
-                      brand={item.brand}
+                      item={item}
+                      type="offline"
+                      index={index}
+                      options={options}
                       onNameChange={(value) => updateItem('offline', 'merchants', index, 'name', value)}
                       onAmountChange={(value) => updateItem('offline', 'merchants', index, 'amount', value)}
+                      onMerchantChange={(value) => updateItem('offline', 'merchants', index, 'merchant', value)}
                       onCategoryChange={(value) => updateItem('offline', 'merchants', index, 'category', value)}
                       onBrandChange={(value) => updateItem('offline', 'merchants', index, 'brand', value)}
                       onRemove={() => removeItem('offline', 'merchants', index)}
-                      showCategory={true}
-                      categoryOptions={commonCategories}
-                      showBrand={!!item.category}
-                      brandOptions={item.category ? brandsByCategory[item.category] || [] : []}
                     />
                   ))}
                 </div>
@@ -543,14 +461,36 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="categories" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.offline.categories.map((item, index) => (
-                    <SpendingItem
-                      key={`offline-category-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      onNameChange={(value) => updateItem('offline', 'categories', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('offline', 'categories', index, 'amount', value)}
-                      onRemove={() => removeItem('offline', 'categories', index)}
-                    />
+                    <div key={`offline-category-${index}`} className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={item.name}
+                          onChange={(e) => updateItem('offline', 'categories', index, 'name', e.target.value)}
+                          placeholder="Category name"
+                          className="flex-1"
+                        />
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            type="number"
+                            value={item.amount === 0 ? '' : item.amount}
+                            onChange={(e) => updateItem('offline', 'categories', index, 'amount', Number(e.target.value))}
+                            placeholder="Amount"
+                            className="pl-8 w-32"
+                          />
+                        </div>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeItem('offline', 'categories', index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <MinusCircle className="h-5 w-5" />
+                          <span className="sr-only">Remove</span>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 
@@ -569,14 +509,36 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               <TabsContent value="bills" className="mt-4 space-y-4">
                 <div className="space-y-3">
                   {spending.offline.bills.map((item, index) => (
-                    <SpendingItem
-                      key={`offline-bill-${index}`}
-                      name={item.name}
-                      amount={item.amount}
-                      onNameChange={(value) => updateItem('offline', 'bills', index, 'name', value)}
-                      onAmountChange={(value) => updateItem('offline', 'bills', index, 'amount', value)}
-                      onRemove={() => removeItem('offline', 'bills', index)}
-                    />
+                    <div key={`offline-bill-${index}`} className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          value={item.name}
+                          onChange={(e) => updateItem('offline', 'bills', index, 'name', e.target.value)}
+                          placeholder="Bill name"
+                          className="flex-1"
+                        />
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            type="number"
+                            value={item.amount === 0 ? '' : item.amount}
+                            onChange={(e) => updateItem('offline', 'bills', index, 'amount', Number(e.target.value))}
+                            placeholder="Amount"
+                            className="pl-8 w-32"
+                          />
+                        </div>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeItem('offline', 'bills', index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <MinusCircle className="h-5 w-5" />
+                          <span className="sr-only">Remove</span>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 
@@ -701,7 +663,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   name: 'Department Store', 
                   amount: 3000, 
                   category: 'Shopping',
-                  brand: undefined
+                  merchant: 'Shopping Mall'
                 });
                 
                 // Fuel
@@ -709,7 +671,8 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   name: 'Petrol Pump', 
                   amount: 4000, 
                   category: 'Fuel',
-                  brand: 'HPCL'
+                  brand: 'HPCL',
+                  merchant: 'Petrol Pump'
                 });
                 
                 // Dining
@@ -717,7 +680,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                   name: 'Restaurants', 
                   amount: 2500, 
                   category: 'Dining',
-                  brand: undefined
+                  merchant: 'Restaurant'
                 });
                 
                 setSpending(updateSpendingTotals(newSpending));

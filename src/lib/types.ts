@@ -11,6 +11,8 @@ export interface SpendingItem {
   category?: string;
   brand?: string;
   app?: string;
+  subApp?: string;
+  merchant?: string;
   subcategories?: {
     level: string;
     value: string;

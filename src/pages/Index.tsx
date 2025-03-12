@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import Header from '@/components/Header';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import SpendingForm from '@/components/SpendingForm';
@@ -23,16 +24,17 @@ const Index = () => {
   const [recommendedCards, setRecommendedCards] = useState<CreditCard[]>([]);
   const [selectedCards, setSelectedCards] = useState<CreditCard[]>([]);
   const [showIntro, setShowIntro] = useState(true);
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const recommendedScrollRef = useRef<HTMLDivElement>(null);
 
   const featuredCards = creditCards.filter(card => 
     ["hdfc-infinia", "sbi-elite", "icici-amazon", "axis-flipkart"].includes(card.id)
   );
 
-  const handleScroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
+  const handleScroll = (direction: 'left' | 'right', ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
       const scrollAmount = 300;
-      scrollRef.current.scrollBy({
+      ref.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
@@ -133,7 +135,7 @@ const Index = () => {
                 variant="outline" 
                 size="icon" 
                 className="rounded-full shadow-md bg-background/90"
-                onClick={() => handleScroll('left')}
+                onClick={() => handleScroll('left', featuredScrollRef)}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -141,7 +143,7 @@ const Index = () => {
             
             <ScrollArea className="w-full pb-4">
               <div 
-                ref={scrollRef}
+                ref={featuredScrollRef}
                 className="flex space-x-4 pb-1 px-1"
               >
                 {featuredCards.map((card) => (
@@ -164,7 +166,7 @@ const Index = () => {
                 variant="outline" 
                 size="icon" 
                 className="rounded-full shadow-md bg-background/90"
-                onClick={() => handleScroll('right')}
+                onClick={() => handleScroll('right', featuredScrollRef)}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -186,16 +188,47 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 gap-8 mb-12 stagger-animation">
-              {recommendedCards.map((card) => (
-                <CardSuggestion
-                  key={card.id}
-                  card={card}
-                  spending={spending}
-                  onSelect={() => handleCardSelect(card)}
-                  isSelected={selectedCards.some(c => c.id === card.id)}
-                />
-              ))}
+            <div className="relative px-4 mb-12">
+              <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 z-10">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full shadow-md bg-background/90"
+                  onClick={() => handleScroll('left', recommendedScrollRef)}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <ScrollArea className="w-full pb-4">
+                <div 
+                  ref={recommendedScrollRef}
+                  className="flex space-x-6 pb-1 px-1"
+                >
+                  {recommendedCards.map((card) => (
+                    <div key={card.id} className="min-w-[300px] md:min-w-[380px] flex-shrink-0">
+                      <CardSuggestion
+                        card={card}
+                        spending={spending}
+                        onSelect={() => handleCardSelect(card)}
+                        isSelected={selectedCards.some(c => c.id === card.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+              
+              <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full shadow-md bg-background/90"
+                  onClick={() => handleScroll('right', recommendedScrollRef)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {selectedCards.length > 0 && (
