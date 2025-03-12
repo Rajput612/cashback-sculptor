@@ -191,12 +191,36 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   return (
     <div className="flex flex-col gap-3 animate-scale-in bg-card/50 p-3 rounded-lg border border-transparent hover:border-muted-foreground/10">
       <div className="flex items-center gap-3">
-        <Input
-          value={item.name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder={`Name (e.g. ${isOnline ? 'Amazon, Netflix' : 'Local Store, Restaurant'})`}
-          className="flex-1"
-        />
+        {isOnline ? (
+          <Select value={item.name} onValueChange={onNameChange}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={`Select App/Website (e.g. Amazon, Netflix)`} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.apps.map((app) => (
+                <SelectItem key={app} value={app}>
+                  {app}
+                </SelectItem>
+              ))}
+              <SelectItem value="other">Other (Custom)</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Select value={item.name} onValueChange={onNameChange}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={`Select Store/Shop (e.g. Local Store, Restaurant)`} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.merchants.map((merchant) => (
+                <SelectItem key={merchant} value={merchant}>
+                  {merchant}
+                </SelectItem>
+              ))}
+              <SelectItem value="other">Other (Custom)</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+        
         <div className="relative">
           <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
