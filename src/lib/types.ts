@@ -16,6 +16,7 @@ export interface SpendingItem {
   subcategories?: {
     level: string;
     value: string;
+    amount: number;
   }[];
 }
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -152,6 +153,17 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     setSpending(updateSpendingTotals(newSpending));
   };
 
+  const updateSubcategories = (
+    type: 'online' | 'offline',
+    subType: 'merchants' | 'categories' | 'bills',
+    index: number,
+    subcategories: { level: string; value: string; amount: number }[]
+  ) => {
+    const newSpending = { ...spending };
+    newSpending[type][subType][index].subcategories = subcategories;
+    setSpending(updateSpendingTotals(newSpending));
+  };
+
   const removeItem = (
     type: 'online' | 'offline',
     subType: 'merchants' | 'categories' | 'bills',
@@ -209,6 +221,31 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
     
     setSpending(updateSpendingTotals(newSpending));
     toast.success("Added popular apps to your spending");
+  };
+
+  const addAmazonExample = () => {
+    const newSpending = { ...spending };
+    
+    // Main Amazon entry with 10,000 total
+    const amazonEntry: SpendingItemType = { 
+      name: 'Amazon', 
+      amount: 10000, 
+      app: 'Amazon',
+      subcategories: [
+        { level: 'subApp', value: 'Amazon Shopping', amount: 9000 },
+        { level: 'subApp', value: 'Amazon Prime', amount: 1000 },
+        { level: 'category', value: 'Electronics', amount: 5000 },
+        { level: 'category', value: 'Clothing', amount: 4000 },
+        { level: 'brand', value: 'Samsung', amount: 5000 },
+        { level: 'brand', value: 'H&M', amount: 2000 },
+        { level: 'brand', value: 'Roadster', amount: 2000 }
+      ]
+    };
+    
+    newSpending.online.merchants.push(amazonEntry);
+    
+    setSpending(updateSpendingTotals(newSpending));
+    toast.success("Added Amazon example with hierarchical spending");
   };
 
   const addCommonExpenses = () => {
@@ -309,6 +346,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       onSubAppChange={(value) => updateItem('online', 'merchants', index, 'subApp', value)}
                       onCategoryChange={(value) => updateItem('online', 'merchants', index, 'category', value)}
                       onBrandChange={(value) => updateItem('online', 'merchants', index, 'brand', value)}
+                      onSubcategoryChange={(subcategories) => updateSubcategories('online', 'merchants', index, subcategories)}
                       onRemove={() => removeItem('online', 'merchants', index)}
                     />
                   ))}
@@ -460,6 +498,7 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
                       onMerchantChange={(value) => updateItem('offline', 'merchants', index, 'merchant', value)}
                       onCategoryChange={(value) => updateItem('offline', 'merchants', index, 'category', value)}
                       onBrandChange={(value) => updateItem('offline', 'merchants', index, 'brand', value)}
+                      onSubcategoryChange={(subcategories) => updateSubcategories('offline', 'merchants', index, subcategories)}
                       onRemove={() => removeItem('offline', 'merchants', index)}
                     />
                   ))}
@@ -616,6 +655,17 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
               type="button" 
               variant="secondary" 
               size="sm" 
+              onClick={addAmazonExample}
+              className="flex items-center gap-2"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              <span>Add Amazon Example</span>
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="sm" 
               onClick={() => {
                 // Add education expenses
                 const newSpending = { ...spending };
@@ -667,47 +717,6 @@ const SpendingForm: React.FC<SpendingFormProps> = ({ className, onSubmit }) => {
             >
               <Landmark className="h-4 w-4" />
               <span>Add EMI Payments</span>
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="secondary" 
-              size="sm" 
-              onClick={() => {
-                // Add daily expenses
-                const newSpending = { ...spending };
-                
-                // Shopping
-                newSpending.offline.merchants.push({ 
-                  name: 'Department Store', 
-                  amount: 3000, 
-                  category: 'Shopping',
-                  merchant: 'Shopping Mall'
-                });
-                
-                // Fuel
-                newSpending.offline.merchants.push({ 
-                  name: 'Petrol Pump', 
-                  amount: 4000, 
-                  category: 'Fuel',
-                  brand: 'HPCL',
-                  merchant: 'Petrol Pump'
-                });
-                
-                // Dining
-                newSpending.offline.merchants.push({ 
-                  name: 'Restaurants', 
-                  amount: 2500, 
-                  category: 'Dining',
-                  merchant: 'Restaurant'
-                });
-                
-                setSpending(updateSpendingTotals(newSpending));
-              }}
-              className="flex items-center gap-2"
-            >
-              <Car className="h-4 w-4" />
-              <span>Add Daily Expenses</span>
             </Button>
           </div>
         </CollapsibleContent>

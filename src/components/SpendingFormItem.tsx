@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MinusCircle, IndianRupee, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
+import { MinusCircle, IndianRupee, ChevronDown, ChevronRight, PlusCircle, ChevronsRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SpendingItem as SpendingItemType } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SpendingFormItemProps {
   item: SpendingItemType;
@@ -17,6 +18,7 @@ interface SpendingFormItemProps {
   onAppChange?: (value: string) => void;
   onSubAppChange?: (value: string) => void;
   onMerchantChange?: (value: string) => void;
+  onSubcategoryChange?: (subcategories: { level: string; value: string; amount: number }[]) => void;
   onRemove: () => void;
   type: 'online' | 'offline';
   index: number;
@@ -38,20 +40,26 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   onAppChange,
   onSubAppChange,
   onMerchantChange,
+  onSubcategoryChange,
   onRemove,
   type,
   index,
   options
 }) => {
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    item.category ? [item.category] : []
+  const [selectedCategories, setSelectedCategories] = useState<{value: string, amount: number}[]>(
+    item.category ? [{value: item.category, amount: 0}] : []
   );
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(
-    item.brand ? [item.brand] : []
+  const [selectedBrands, setSelectedBrands] = useState<{value: string, amount: number}[]>(
+    item.brand ? [{value: item.brand, amount: 0}] : []
   );
-  const [selectedSubApps, setSelectedSubApps] = useState<string[]>(
-    item.subApp ? [item.subApp] : []
+  const [selectedSubApps, setSelectedSubApps] = useState<{value: string, amount: number}[]>(
+    item.subApp ? [{value: item.subApp, amount: 0}] : []
+  );
+  
+  // State for hierarchical spending
+  const [subcategories, setSubcategories] = useState<{level: string, value: string, amount: number}[]>(
+    item.subcategories || []
   );
 
   const isOnline = type === 'online';
@@ -59,8 +67,20 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   const handleCategorySelect = (category: string) => {
     if (onCategoryChange) {
       if (category) {
-        setSelectedCategories([...selectedCategories, category]);
+        const newCategory = {value: category, amount: 0};
+        setSelectedCategories([...selectedCategories, newCategory]);
         onCategoryChange(category);
+        
+        // Also update subcategories if onSubcategoryChange is provided
+        if (onSubcategoryChange) {
+          const newSubcategories = [...subcategories, {
+            level: 'category',
+            value: category,
+            amount: 0
+          }];
+          setSubcategories(newSubcategories);
+          onSubcategoryChange(newSubcategories);
+        }
       }
     }
   };
@@ -68,8 +88,20 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   const handleBrandSelect = (brand: string) => {
     if (onBrandChange) {
       if (brand) {
-        setSelectedBrands([...selectedBrands, brand]);
+        const newBrand = {value: brand, amount: 0};
+        setSelectedBrands([...selectedBrands, newBrand]);
         onBrandChange(brand);
+        
+        // Also update subcategories if onSubcategoryChange is provided
+        if (onSubcategoryChange) {
+          const newSubcategories = [...subcategories, {
+            level: 'brand',
+            value: brand,
+            amount: 0
+          }];
+          setSubcategories(newSubcategories);
+          onSubcategoryChange(newSubcategories);
+        }
       }
     }
   };
@@ -77,22 +109,73 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
   const handleSubAppSelect = (subApp: string) => {
     if (onSubAppChange) {
       if (subApp) {
-        setSelectedSubApps([...selectedSubApps, subApp]);
+        const newSubApp = {value: subApp, amount: 0};
+        setSelectedSubApps([...selectedSubApps, newSubApp]);
         onSubAppChange(subApp);
+        
+        // Also update subcategories if onSubcategoryChange is provided
+        if (onSubcategoryChange) {
+          const newSubcategories = [...subcategories, {
+            level: 'subApp',
+            value: subApp,
+            amount: 0
+          }];
+          setSubcategories(newSubcategories);
+          onSubcategoryChange(newSubcategories);
+        }
       }
     }
   };
   
+  const updateSubcategoryAmount = (level: string, value: string, amount: number) => {
+    const newSubcategories = subcategories.map(sc => 
+      sc.level === level && sc.value === value 
+        ? { ...sc, amount } 
+        : sc
+    );
+    setSubcategories(newSubcategories);
+    if (onSubcategoryChange) {
+      onSubcategoryChange(newSubcategories);
+    }
+    
+    // Also update local state arrays for correct UI rendering
+    if (level === 'category') {
+      setSelectedCategories(selectedCategories.map(cat => 
+        cat.value === value ? { ...cat, amount } : cat
+      ));
+    } else if (level === 'brand') {
+      setSelectedBrands(selectedBrands.map(brand => 
+        brand.value === value ? { ...brand, amount } : brand
+      ));
+    } else if (level === 'subApp') {
+      setSelectedSubApps(selectedSubApps.map(subApp => 
+        subApp.value === value ? { ...subApp, amount } : subApp
+      ));
+    }
+  };
+  
   const removeCategory = (category: string) => {
-    setSelectedCategories(selectedCategories.filter(c => c !== category));
+    setSelectedCategories(selectedCategories.filter(c => c.value !== category));
+    setSubcategories(subcategories.filter(sc => !(sc.level === 'category' && sc.value === category)));
+    if (onSubcategoryChange) {
+      onSubcategoryChange(subcategories.filter(sc => !(sc.level === 'category' && sc.value === category)));
+    }
   };
   
   const removeBrand = (brand: string) => {
-    setSelectedBrands(selectedBrands.filter(b => b !== brand));
+    setSelectedBrands(selectedBrands.filter(b => b.value !== brand));
+    setSubcategories(subcategories.filter(sc => !(sc.level === 'brand' && sc.value === brand)));
+    if (onSubcategoryChange) {
+      onSubcategoryChange(subcategories.filter(sc => !(sc.level === 'brand' && sc.value === brand)));
+    }
   };
   
   const removeSubApp = (subApp: string) => {
-    setSelectedSubApps(selectedSubApps.filter(s => s !== subApp));
+    setSelectedSubApps(selectedSubApps.filter(s => s.value !== subApp));
+    setSubcategories(subcategories.filter(sc => !(sc.level === 'subApp' && sc.value === subApp)));
+    if (onSubcategoryChange) {
+      onSubcategoryChange(subcategories.filter(sc => !(sc.level === 'subApp' && sc.value === subApp)));
+    }
   };
   
   const renderDetailsContent = () => {
@@ -118,21 +201,46 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Display selected sub apps as badges */}
+                  {/* Display selected sub apps as badges with amounts */}
                   {selectedSubApps.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {selectedSubApps.map(subApp => (
-                        <Badge key={subApp} variant="secondary" className="flex items-center gap-1">
-                          {subApp}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => removeSubApp(subApp)}
-                          >
-                            <MinusCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
+                        <Collapsible key={subApp.value} className="w-full md:w-auto">
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {subApp.value}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeSubApp(subApp.value)}
+                              >
+                                <MinusCircle className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          </div>
+                          <CollapsibleContent className="mt-1 space-y-1">
+                            <div className="flex items-center gap-2 pl-2">
+                              <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={subcategories.find(sc => sc.level === 'subApp' && sc.value === subApp.value)?.amount || 0}
+                                onChange={(e) => updateSubcategoryAmount('subApp', subApp.value, Number(e.target.value))}
+                                placeholder="Amount"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
                     </div>
                   )}
@@ -163,21 +271,46 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Display selected categories as badges */}
+                  {/* Display selected categories as badges with amounts */}
                   {selectedCategories.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {selectedCategories.map(category => (
-                        <Badge key={category} variant="secondary" className="flex items-center gap-1">
-                          {category}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => removeCategory(category)}
-                          >
-                            <MinusCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
+                        <Collapsible key={category.value} className="w-full md:w-auto">
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {category.value}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeCategory(category.value)}
+                              >
+                                <MinusCircle className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          </div>
+                          <CollapsibleContent className="mt-1 space-y-1">
+                            <div className="flex items-center gap-2 pl-2">
+                              <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={subcategories.find(sc => sc.level === 'category' && sc.value === category.value)?.amount || 0}
+                                onChange={(e) => updateSubcategoryAmount('category', category.value, Number(e.target.value))}
+                                placeholder="Amount"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
                     </div>
                   )}
@@ -198,7 +331,7 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {selectedCategories
-                        .flatMap(category => options.brands[category] || [])
+                        .flatMap(category => options.brands[category.value] || [])
                         .filter((brand, index, self) => self.indexOf(brand) === index) // Remove duplicates
                         .map((brand) => (
                           <SelectItem key={brand} value={brand}>
@@ -208,21 +341,46 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Display selected brands as badges */}
+                  {/* Display selected brands as badges with amounts */}
                   {selectedBrands.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {selectedBrands.map(brand => (
-                        <Badge key={brand} variant="secondary" className="flex items-center gap-1">
-                          {brand}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => removeBrand(brand)}
-                          >
-                            <MinusCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
+                        <Collapsible key={brand.value} className="w-full md:w-auto">
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {brand.value}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeBrand(brand.value)}
+                              >
+                                <MinusCircle className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          </div>
+                          <CollapsibleContent className="mt-1 space-y-1">
+                            <div className="flex items-center gap-2 pl-2">
+                              <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={subcategories.find(sc => sc.level === 'brand' && sc.value === brand.value)?.amount || 0}
+                                onChange={(e) => updateSubcategoryAmount('brand', brand.value, Number(e.target.value))}
+                                placeholder="Amount"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
                     </div>
                   )}
@@ -255,21 +413,46 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Display selected categories as badges */}
+                  {/* Display selected categories as badges with amounts */}
                   {selectedCategories.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {selectedCategories.map(category => (
-                        <Badge key={category} variant="secondary" className="flex items-center gap-1">
-                          {category}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => removeCategory(category)}
-                          >
-                            <MinusCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
+                        <Collapsible key={category.value} className="w-full md:w-auto">
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {category.value}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeCategory(category.value)}
+                              >
+                                <MinusCircle className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          </div>
+                          <CollapsibleContent className="mt-1 space-y-1">
+                            <div className="flex items-center gap-2 pl-2">
+                              <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={subcategories.find(sc => sc.level === 'category' && sc.value === category.value)?.amount || 0}
+                                onChange={(e) => updateSubcategoryAmount('category', category.value, Number(e.target.value))}
+                                placeholder="Amount"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
                     </div>
                   )}
@@ -290,7 +473,7 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {selectedCategories
-                        .flatMap(category => options.brands[category] || [])
+                        .flatMap(category => options.brands[category.value] || [])
                         .filter((brand, index, self) => self.indexOf(brand) === index) // Remove duplicates
                         .map((brand) => (
                           <SelectItem key={brand} value={brand}>
@@ -300,21 +483,46 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
                     </SelectContent>
                   </Select>
                   
-                  {/* Display selected brands as badges */}
+                  {/* Display selected brands as badges with amounts */}
                   {selectedBrands.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {selectedBrands.map(brand => (
-                        <Badge key={brand} variant="secondary" className="flex items-center gap-1">
-                          {brand}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={() => removeBrand(brand)}
-                          >
-                            <MinusCircle className="h-3 w-3" />
-                          </Button>
-                        </Badge>
+                        <Collapsible key={brand.value} className="w-full md:w-auto">
+                          <div className="flex flex-wrap gap-1 items-center">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              {brand.value}
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 hover:bg-transparent"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 hover:bg-transparent"
+                                onClick={() => removeBrand(brand.value)}
+                              >
+                                <MinusCircle className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          </div>
+                          <CollapsibleContent className="mt-1 space-y-1">
+                            <div className="flex items-center gap-2 pl-2">
+                              <IndianRupee className="h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={subcategories.find(sc => sc.level === 'brand' && sc.value === brand.value)?.amount || 0}
+                                onChange={(e) => updateSubcategoryAmount('brand', brand.value, Number(e.target.value))}
+                                placeholder="Amount"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       ))}
                     </div>
                   )}
@@ -325,6 +533,28 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
         </div>
       );
     }
+  };
+
+  // Format the hierarchy for display
+  const formatHierarchy = () => {
+    if (subcategories.length === 0) return null;
+    
+    return (
+      <div className="mt-3 pl-2 text-xs text-muted-foreground">
+        <div className="flex items-center">
+          <ChevronsRight className="h-3 w-3 mr-1" />
+          <span className="font-medium">Breakdown:</span>
+        </div>
+        <div className="ml-2 space-y-1 mt-1">
+          {subcategories.filter(sc => sc.amount > 0).map((sc, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <span>{sc.value}</span>
+              <span>₹{sc.amount.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -406,6 +636,8 @@ const SpendingFormItem: React.FC<SpendingFormItemProps> = ({
       </div>
       
       {showDetails && renderDetailsContent()}
+      
+      {formatHierarchy()}
     </div>
   );
 };
