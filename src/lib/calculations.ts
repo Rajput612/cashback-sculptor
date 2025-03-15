@@ -1,9 +1,17 @@
+
 export interface SpendingItem {
   name: string;
   amount: number;
   category?: string;
   brand?: string;
   app?: string;
+  subApp?: string;
+  merchant?: string;
+  subcategories?: {
+    level: string;
+    value: string;
+    amount: number;
+  }[];
 }
 
 export interface Spending {
@@ -27,9 +35,12 @@ export interface CreditCard {
   name: string;
   issuer: string;
   image: string;
+  type?: string;
+  network?: string;
   annualFee: number;
   isCoBranded?: boolean;
   coPartner?: string;
+  recommendedFor?: string[];
   cashbackRates: {
     category: string;
     rate: number;
@@ -344,7 +355,7 @@ const categoryMapping: Record<string, string[]> = {
   
   // Co-branded specific categories
   "amazon": ["amazon", "amazon.in", "amazon pay"],
-  "flipkart": ["flipkart", "flipkart.com"],
+  "flipkart": ["flipkart", "flipkart.com", "flipkart grocery"],
   "myntra": ["myntra", "myntra.com"]
 };
 
@@ -352,6 +363,17 @@ const categoryMapping: Record<string, string[]> = {
 export function matchCategory(userCategory: string, subcategories?: { level: string; value: string; }[]): string {
   const fullPath = [userCategory, ...(subcategories?.map(sc => sc.value) || [])].join('/').toLowerCase();
   
+  // First check for exact matches to co-branded categories
+  for (const [cardCategory, keywords] of Object.entries(categoryMapping)) {
+    // Priority match for co-branded categories
+    if (['amazon', 'flipkart', 'myntra'].includes(cardCategory)) {
+      if (keywords.some(keyword => fullPath.startsWith(keyword))) {
+        return cardCategory;
+      }
+    }
+  }
+  
+  // Then check for other category matches
   for (const [cardCategory, keywords] of Object.entries(categoryMapping)) {
     if (keywords.some(keyword => fullPath.includes(keyword))) {
       return cardCategory;
@@ -366,26 +388,68 @@ export function calculateCashback(card: CreditCard, spending: Spending): number 
   let totalCashback = 0;
   
   const processSpendingItem = (item: SpendingItem) => {
-    const spendingCategory = item.category ? 
-      matchCategory(item.category, item.subcategories) : 
-      matchCategory(item.name, item.subcategories);
+    // Check for app/merchant name first to match co-branded cards
+    let matchedCategory = "general";
     
-    // If this is a merchant with a brand and it matches a co-branded card
-    if (item.brand && card.isCoBranded && card.coPartner) {
-      if (item.brand.toLowerCase().includes(card.coPartner.toLowerCase())) {
-        // Get co-branded rate if it exists
-        const coBrandedRate = card.cashbackRates.find(r => r.category.toLowerCase() === card.coPartner?.toLowerCase())?.rate;
+    // Special handling for co-branded cards
+    if (card.isCoBranded && card.coPartner) {
+      const appName = item.app || item.name || "";
+      
+      // Check if this spending is for the co-branded partner
+      if (appName.toLowerCase().includes(card.coPartner.toLowerCase())) {
+        // Look for the co-branded rate
+        const coBrandedRate = card.cashbackRates.find(r => 
+          r.category.toLowerCase() === card.coPartner?.toLowerCase()
+        )?.rate;
+        
         if (coBrandedRate) {
           totalCashback += (item.amount * coBrandedRate) / 100;
-          return;
+          return; // Skip further processing for this item
         }
       }
     }
+    
+    // If not handled by co-brand logic, proceed with category matching
+    const spendingCategory = item.category ? 
+      matchCategory(item.category, item.subcategories) : 
+      matchCategory(item.name || "", item.subcategories);
     
     // Use matching category or fall back to general
     const rate = card.cashbackRates.find(r => r.category === spendingCategory)?.rate || 
                  card.cashbackRates.find(r => r.category === "general")?.rate || 1;
     
+    // Process subcategories with specific amounts if available
+    if (item.subcategories && item.subcategories.length > 0) {
+      // Calculate for each subcategory with an amount
+      const subcategoriesWithAmount = item.subcategories.filter(sc => sc.amount > 0);
+      
+      if (subcategoriesWithAmount.length > 0) {
+        let processedAmount = 0;
+        
+        for (const subcat of subcategoriesWithAmount) {
+          // For each subcategory, check if there's a specific match
+          const subcatPath = `${item.name}/${subcat.value}`.toLowerCase();
+          let subcatCategory = matchCategory(subcatPath);
+          
+          // Determine the rate for this subcategory
+          const subcatRate = card.cashbackRates.find(r => r.category === subcatCategory)?.rate || 
+                            card.cashbackRates.find(r => r.category === "general")?.rate || 1;
+          
+          totalCashback += (subcat.amount * subcatRate) / 100;
+          processedAmount += subcat.amount;
+        }
+        
+        // Process any remaining amount at the top level
+        const remainingAmount = item.amount - processedAmount;
+        if (remainingAmount > 0) {
+          totalCashback += (remainingAmount * rate) / 100;
+        }
+        
+        return; // Skip further processing
+      }
+    }
+    
+    // Process the entire amount if no subcategories were processed
     totalCashback += (item.amount * rate) / 100;
   };
   
